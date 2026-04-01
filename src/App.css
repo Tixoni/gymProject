@@ -1,0 +1,17 @@
+/* Убираем горизонтальный скролл */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Убеждаемся, что все элементы не выходят за границы */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
