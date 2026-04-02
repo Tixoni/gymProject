@@ -107,11 +107,11 @@ class WorkoutAppDB extends Dexie {
       void transaction.table('exercisesTable').bulkAdd([
         { exerciseId: 1, title: 'Жим штанги лежа', muscleGroupId: 1 },
         { exerciseId: 2, title: 'Жим гантелей лежа', muscleGroupId: 1 },
-        { exerciseId: 3, title: 'Сведение рук в кроссовере', muscleGroupId: 1 },
+        { exerciseId: 3, title: 'Баттерфляй', muscleGroupId: 1 },
         { exerciseId: 4, title: 'Отжимания на брусьях', muscleGroupId: 1 },
 
         { exerciseId: 5, title: 'Тяга верхнего блока', muscleGroupId: 2 },
-        { exerciseId: 6, title: 'Тяга штанги в наклоне', muscleGroupId: 2 },
+        { exerciseId: 6, title: 'Горизонтальная тяга', muscleGroupId: 2 },
         { exerciseId: 7, title: 'Подтягивания', muscleGroupId: 2 },
         { exerciseId: 8, title: 'Тяга гантели одной рукой', muscleGroupId: 2 },
 

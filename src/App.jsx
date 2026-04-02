@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import NavButton from './components/NavButton'
 import TrainingProgramsTab from './components/TrainingProgramsTab'
+import TodayTab from './components/TodayTab'
 import iconToday from './assets/today.svg'
 import iconCallendary from './assets/callendary_v2.svg'
 import iconPrograms from './assets/trainingPrograms.svg'
@@ -76,12 +77,7 @@ function App() {
         className={`min-h-0 flex-1 overflow-y-auto text-left ${MAIN_INSETS} ${THEME_LAYOUT.mainPadding} ${THEME_COLORS.contentText}`}
       >
         {activeTab === 'today' && (
-          <div>
-            <p className={THEME_COLORS.contentMuted}>
-              Вкладка «Сегодня» — заглушка. Данные профиля и истории тренировок
-              пока не подключены.
-            </p>
-          </div>
+          <TodayTab />
         )}
         {activeTab === 'calendar' && (
           <div>
