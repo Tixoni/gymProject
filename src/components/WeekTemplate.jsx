@@ -28,10 +28,17 @@ function IconCross({ selected }) {
   )
 }
 
-export default function WeekTemplate({ weekNumber, trainings = [] }) {
+export default function WeekTemplate({
+  weekNumber,
+  trainings = [],
+  weekCompleted = false,
+  weekAllDefault = false,
+  onWeekMarkCompleted,
+  onWeekMarkNotCompleted,
+  onWeekReset,
+}) {
   const collapseId = useId()
   const [collapsed, setCollapsed] = useState(false)
-  const [status, setStatus] = useState(null) // 'completed' | 'not_completed' | null
 
   const toggleCollapsed = () => setCollapsed((v) => !v)
   const headerClass =
@@ -73,22 +80,22 @@ export default function WeekTemplate({ weekNumber, trainings = [] }) {
               <input
                 type="radio"
                 name={`week-status-${weekNumber}`}
-                checked={status === 'completed'}
-                onChange={() => setStatus('completed')}
+                checked={weekCompleted}
+                onChange={() => onWeekMarkCompleted?.()}
                 className="sr-only"
               />
-              <IconCheck selected={status === 'completed'} />
+              <IconCheck selected={weekCompleted} />
             </label>
 
             <label className="cursor-pointer">
               <input
                 type="radio"
                 name={`week-status-${weekNumber}`}
-                checked={status === 'not_completed'}
-                onChange={() => setStatus('not_completed')}
+                checked={weekAllDefault}
+                onChange={() => onWeekMarkNotCompleted?.()}
                 className="sr-only"
               />
-              <IconCross selected={status === 'not_completed'} />
+              <IconCross selected={weekAllDefault} />
             </label>
           </fieldset>
 
@@ -97,12 +104,12 @@ export default function WeekTemplate({ weekNumber, trainings = [] }) {
             aria-label="Сбросить выбор статуса недели"
             onClick={(e) => {
               e.stopPropagation()
-              setStatus(null)
+              onWeekReset?.()
             }}
             className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
-              status === 'completed'
+              weekCompleted
                 ? 'border-green-500/40 bg-green-950/25 text-green-200 hover:bg-green-950/35'
-                : status === 'not_completed'
+                : weekAllDefault
                   ? 'border-red-500/40 bg-red-950/25 text-red-200 hover:bg-red-950/35'
                   : 'border-orange-400/30 bg-orange-950/20 text-orange-300/90 hover:bg-orange-950/35'
             }`}
@@ -127,25 +134,15 @@ export default function WeekTemplate({ weekNumber, trainings = [] }) {
       >
         {trainings.length ? (
           <ul className="list-none space-y-2 pl-0">
-            {trainings.map((t, idx) => {
-              const title =
-                typeof t === 'string'
-                  ? t
-                  : t?.title ??
-                    t?.name ??
-                    t?.trainingTitle ??
-                    t?.trainingId ??
-                    `Тренировка ${idx + 1}`
-
-              return (
-                <li
-                  key={typeof t === 'string' ? `${t}-${idx}` : t?.id ?? idx}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200"
-                >
-                  {title}
-                </li>
-              )
-            })}
+            {trainings.map((t, idx) => (
+              <li key={t?.id ?? t?.trainingId ?? idx} className="rounded-lg">
+                {t?.node ?? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200">
+                    {t?.title ?? t?.name ?? t?.trainingTitle ?? `Тренировка ${idx + 1}`}
+                  </div>
+                )}
+              </li>
+            ))}
           </ul>
         ) : (
           <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500">
