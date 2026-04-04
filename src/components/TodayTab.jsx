@@ -1,9 +1,14 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useCallback, useMemo } from 'react'
+import { db } from '../storage/db'
+import { workoutService } from '../storage/workoutService'
 import InfoAccordion from './InfoAccordion'
 import TrainingTemplate from './TrainingTemplate'
 import WeekTemplate from './WeekTemplate'
 
 const DEFAULT_SET_STATUS = 'not_completed'
+
+const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 function isTrainingCompleted(sets) {
   return (
@@ -17,116 +22,106 @@ function isTrainingAllDefault(sets) {
 }
 
 export default function TodayTab() {
-  const exercisesById = useMemo(
-    () => ({
-      /** `imgTitle` — имя файла в `exercisesIcon` (совпадает с полем в БД) */
-      23: { title: 'Приседания со штангой', imgTitle: undefined },
-      15: {
-        title: 'Подъем штанги на бицепс',
-        imgTitle: 'подъемШтангиНаБицепс.png',
-      },
-    }),
+  const exercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
+
+  const exercisesById = useMemo(() => {
+    const map = {}
+    for (const e of exercises ?? []) {
+      if (e.exerciseId != null) {
+        map[e.exerciseId] = { title: e.title, imgTitle: e.imgTitle }
+      }
+    }
+    return map
+  }, [exercises])
+
+  const trainingBlocks = useLiveQuery(
+    () => workoutService.listTrainingsWithSetsForActiveCycles(),
     [],
   )
 
-  const [setsByTrainingId, setSetsByTrainingId] = useState(() => ({
-    101: [
-      {
-        setId: 1,
-        trainingId: 101,
-        exerciseId: 23,
-        setNumber: 1,
-        weight: 17.5,
-        reps: 5,
-        status: DEFAULT_SET_STATUS,
-      },
-      {
-        setId: 2,
-        trainingId: 101,
-        exerciseId: 23,
-        setNumber: 2,
-        weight: 17.5,
-        reps: 5,
-        status: DEFAULT_SET_STATUS,
-      },
-      {
-        setId: 3,
-        trainingId: 101,
-        exerciseId: 15,
-        setNumber: 1,
-        weight: 20,
-        reps: 8,
-        status: 'completed',
-      },
-    ],
-    102: [
-      {
-        setId: 4,
-        trainingId: 102,
-        exerciseId: 23,
-        setNumber: 1,
-        weight: 20,
-        reps: 5,
-        status: 'partial',
-        actualReps: 2,
-      },
-      {
-        setId: 5,
-        trainingId: 102,
-        exerciseId: 23,
-        setNumber: 2,
-        weight: 20,
-        reps: 5,
-        status: 'failed',
-      },
-      {
-        setId: 6,
-        trainingId: 102,
-        exerciseId: 15,
-        setNumber: 1,
-        weight: 17.5,
-        reps: 10,
-        status: 'skipped',
-      },
-    ],
-  }))
-
-  const weeksConfig = useMemo(
-    () => [
+  const weeksConfig = useMemo(() => {
+    const blocks = trainingBlocks ?? []
+    if (!blocks.length) return []
+    const trainingIds = blocks.map((b) => b.training.trainingId).filter(Boolean)
+    const trainings = blocks.map((b, i) => {
+      const tid = b.training.trainingId
+      const dow = b.training.dayOfTheWeek
+      const label =
+        dow != null && dow >= 1 && dow <= 7
+          ? DAY_LABELS[dow - 1]
+          : DAY_LABELS[i % 7]
+      return {
+        trainingId: tid,
+        dayLabel: label,
+        date: b.training.plannedDate ?? '',
+      }
+    })
+    return [
       {
         weekNumber: 1,
-        trainingIds: [101, 102],
-        trainings: [
-          { trainingId: 101, dayLabel: 'Пн', date: '02.04' },
-          { trainingId: 102, dayLabel: 'Ср', date: '04.04' },
-        ],
+        trainingIds,
+        trainings,
       },
-    ],
-    [],
+    ]
+  }, [trainingBlocks])
+
+  const setsByTrainingId = useMemo(() => {
+    const map = {}
+    for (const b of trainingBlocks ?? []) {
+      const tid = b.training.trainingId
+      if (tid != null) map[tid] = b.sets
+    }
+    return map
+  }, [trainingBlocks])
+
+  const markTrainingAllSets = useCallback(async (trainingId, status) => {
+    const list = setsByTrainingId[trainingId]
+    if (!list?.length) return
+    await Promise.all(
+      list
+        .filter((s) => s.setId != null)
+        .map((s) => workoutService.updateSetById(s.setId, { status })),
+    )
+  }, [setsByTrainingId])
+
+  const markWeekAllSets = useCallback(
+    async (trainingIds, status) => {
+      for (const tid of trainingIds) {
+        await markTrainingAllSets(tid, status)
+      }
+    },
+    [markTrainingAllSets],
   )
 
-  const markTrainingAllSets = useCallback((trainingId, status) => {
-    setSetsByTrainingId((prev) => {
-      const list = prev[trainingId]
-      if (!list?.length) return prev
-      return {
-        ...prev,
-        [trainingId]: list.map((s) => ({ ...s, status })),
-      }
-    })
+  const handleUpdateSet = useCallback(async (updated) => {
+    if (updated?.setId == null) return
+    const { setId, ...rest } = updated
+    await workoutService.updateSetById(setId, rest)
   }, [])
 
-  const markWeekAllSets = useCallback((trainingIds, status) => {
-    setSetsByTrainingId((prev) => {
-      const next = { ...prev }
-      for (const tid of trainingIds) {
-        const list = next[tid]
-        if (!list?.length) continue
-        next[tid] = list.map((s) => ({ ...s, status }))
-      }
-      return next
-    })
-  }, [])
+  if (trainingBlocks === undefined) {
+    return (
+      <p className="mt-6 text-sm text-zinc-500 lg:mt-8">
+        Загрузка тренировок…
+      </p>
+    )
+  }
+
+  if (!weeksConfig.length || !weeksConfig[0].trainingIds.length) {
+    return (
+      <div className="mt-6 lg:mt-8">
+        <InfoAccordion title="Справка">
+          Здесь отображаются тренировки из циклов в локальной базе. При первом
+          запуске добавляется демо-цикл; новые программы создаются на вкладке
+          «Программы».
+        </InfoAccordion>
+        <p className="mt-4 text-sm text-zinc-500">
+          Нет тренировок с подходами. Откройте «Программы» и создайте цикл или
+          дождитесь инициализации демо-данных.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-6 space-y-3 lg:mt-8 lg:space-y-4">
@@ -134,7 +129,7 @@ export default function TodayTab() {
         Статус тренировки (✓/✕) следует за подходами: если все подходы не в
         дефолте — тренировка «выполнена». Неделя «выполнена», когда так все
         тренировки недели. Кнопка ✓ у недели помечает все подходы всех
-        тренировок недели как выполненные.
+        тренировок недели как выполненные. Данные сохраняются в IndexedDB.
       </InfoAccordion>
       {weeksConfig.map((w) => {
         const weekCompleted =
@@ -166,15 +161,7 @@ export default function TodayTab() {
                   training={t}
                   sets={setsByTrainingId[t.trainingId] ?? []}
                   exercisesById={exercisesById}
-                  onUpdateSet={(updated) => {
-                    setSetsByTrainingId((prev) => {
-                      const next = { ...prev }
-                      next[t.trainingId] = (next[t.trainingId] ?? []).map((s) =>
-                        s.setId === updated.setId ? { ...s, ...updated } : s,
-                      )
-                      return next
-                    })
-                  }}
+                  onUpdateSet={handleUpdateSet}
                   onMarkTrainingCompleted={() =>
                     markTrainingAllSets(t.trainingId, 'completed')
                   }

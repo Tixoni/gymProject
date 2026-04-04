@@ -4,10 +4,10 @@
  * Значения в процентах (целое число = % от рекорда).
  */
 export const TRAINING_LOAD_CONSTANTS = {
-  PERCENT_OF_RECORD_8_REPS: 73,
-  PERCENT_OF_RECORD_6_REPS: 77,
+  PERCENT_OF_RECORD_8_REPS: 70,
+  PERCENT_OF_RECORD_6_REPS: 76,
   PERCENT_OF_RECORD_4_REPS: 82,
-  PERCENT_OF_RECORD_2_REPS: 86,
+  PERCENT_OF_RECORD_2_REPS: 87,
 
   /** Прирост веса к «той же» неделе следующего месяца: + personalMaximum * GROWTH_RATE (кг) */
   GROWTH_RATE: 0.045,
