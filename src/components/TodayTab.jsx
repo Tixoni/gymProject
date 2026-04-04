@@ -19,8 +19,12 @@ function isTrainingAllDefault(sets) {
 export default function TodayTab() {
   const exercisesById = useMemo(
     () => ({
-      23: { title: 'Приседания' },
-      15: { title: 'Подъем штанги на бицепс' },
+      /** `imgTitle` — имя файла в `exercisesIcon` (совпадает с полем в БД) */
+      23: { title: 'Приседания со штангой', imgTitle: undefined },
+      15: {
+        title: 'Подъем штанги на бицепс',
+        imgTitle: 'подъемШтангиНаБицепс.png',
+      },
     }),
     [],
   )
@@ -64,6 +68,7 @@ export default function TodayTab() {
         weight: 20,
         reps: 5,
         status: 'partial',
+        actualReps: 2,
       },
       {
         setId: 5,
@@ -124,7 +129,7 @@ export default function TodayTab() {
   }, [])
 
   return (
-    <div className="mt-6 space-y-3">
+    <div className="mt-6 space-y-3 lg:mt-8 lg:space-y-4">
       <InfoAccordion title="Справка">
         Статус тренировки (✓/✕) следует за подходами: если все подходы не в
         дефолте — тренировка «выполнена». Неделя «выполнена», когда так все

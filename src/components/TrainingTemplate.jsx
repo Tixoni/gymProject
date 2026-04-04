@@ -1,11 +1,12 @@
 import { useId, useMemo, useState } from 'react'
+import { getExerciseIconSrc } from '../utils/exerciseIcons'
 import SetEditModal from './modal/SetEditModal'
 import SetRow from './SetRow'
 
 function IconCheck({ selected }) {
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition ${
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
           ? 'border-green-500/60 bg-green-950/40 text-green-300'
           : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
@@ -19,7 +20,7 @@ function IconCheck({ selected }) {
 function IconCross({ selected }) {
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition ${
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
           ? 'border-red-500/60 bg-red-950/40 text-red-300'
           : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
@@ -85,9 +86,9 @@ export default function TrainingTemplate({
   const dateLabel = training?.date ?? training?.plannedDate ?? training?.actualDate ?? ''
 
   return (
-    <section className="rounded-xl border border-zinc-800/90 bg-zinc-950/25">
+    <section className="rounded-xl border border-zinc-800/90 bg-zinc-950/25 lg:rounded-2xl">
       <div
-        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 transition hover:bg-zinc-900/30"
+        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 transition hover:bg-zinc-900/30 lg:gap-4 lg:px-4 lg:py-3"
         role="button"
         tabIndex={0}
         aria-controls={collapseId}
@@ -98,15 +99,15 @@ export default function TrainingTemplate({
         }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/20 bg-orange-950/15 text-orange-300/90">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/20 bg-orange-950/15 text-orange-300/90 lg:h-10 lg:w-10 lg:text-xl">
             🗓
           </span>
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-zinc-100">
+            <div className="text-sm font-semibold text-zinc-100 lg:text-base">
               {dayLabel}
               {dateLabel ? <span className="text-zinc-500"> · {dateLabel}</span> : null}
             </div>
-            <div className="mt-0.5 text-xs text-zinc-500">
+            <div className="mt-0.5 text-xs text-zinc-500 lg:text-sm">
               {progress.done}/{progress.total} подходов
             </div>
           </div>
@@ -152,42 +153,62 @@ export default function TrainingTemplate({
       </div>
 
       <div id={collapseId} className={collapsed ? 'hidden' : 'block'}>
-        <div className="px-3 pb-3 pt-1">
+        <div className="px-3 pb-3 pt-1 lg:px-4 lg:pb-4 lg:pt-2">
           {groups.length ? (
-            <ul className="list-none space-y-3 pl-0">
+            <ul className="list-none space-y-4 pl-0">
               {groups.map((g) => {
+                const meta = exercisesById?.[g.exerciseId]
                 const title =
-                  exercisesById?.[g.exerciseId]?.title ??
-                  exercisesById?.[g.exerciseId] ??
+                  meta?.title ??
+                  (typeof meta === 'string' ? meta : null) ??
                   (g.exerciseId === 'unknown' ? 'Без упражнения' : `Упражнение ${g.exerciseId}`)
+                const iconSrc = getExerciseIconSrc(
+                  typeof meta === 'object' && meta?.imgTitle != null ? meta.imgTitle : undefined,
+                )
 
                 return (
-                  <li key={String(g.exerciseId)} className="space-y-2">
-                    <div className="px-1 text-xs font-semibold tracking-wide text-orange-300/90">
-                      {title}
-                    </div>
-                    <div className="space-y-2">
-                      {g.sets.map((s) => (
-                        <SetRow
-                          key={s?.setId ?? `${s?.exerciseId}-${s?.setNumber}`}
-                          set={s}
-                          onClick={() => setEditingSet(s)}
-                        />
-                      ))}
+                  <li key={String(g.exerciseId)}>
+                    <div className=" border-b border-orange-500/25 bg-zinc-950/30 pb-3">
+                      <div className="mb-3 flex items-start gap-3">
+                        {iconSrc ? (
+                          <img
+                            src={iconSrc}
+                            alt=""
+                            className="h-20 w-20 shrink-0 rounded-xl bg-zinc-900/40 object-contain lg:h-24 lg:w-24 lg:rounded-2xl"
+                          />
+                        ) : (
+                          <div
+                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-orange-500/35 bg-zinc-900/25 text-[10px] text-orange-300/70 lg:h-[4.5rem] lg:w-[4.5rem] lg:text-xs"
+                            aria-hidden
+                          >
+                            нет
+                          </div>
+                        )}
+                        <div className="min-w-0 text-sm font-semibold leading-snug text-orange-100 lg:text-base">
+                          {title}
+                        </div>
+                      </div>
+                      <ul className="list-none space-y-2 pl-0">
+                        {g.sets.map((s) => (
+                          <li key={s?.setId ?? `${s?.exerciseId}-${s?.setNumber}`}>
+                            <SetRow set={s} onClick={() => setEditingSet(s)} />
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </li>
                 )
               })}
             </ul>
           ) : (
-            <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500">
+            <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500 lg:p-4 lg:text-base">
               Подходов пока нет.
             </div>
           )}
         </div>
 
-        <div className="border-t border-zinc-800 px-3 py-3">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+        <div className="border-t border-zinc-800 px-3 py-3 lg:px-4 lg:py-4">
+          <div className="flex items-center justify-between text-xs text-zinc-500 lg:text-sm">
             <span>Прогресс</span>
             <span className="text-zinc-400">{progress.percent}%</span>
           </div>

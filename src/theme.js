@@ -37,14 +37,15 @@ export const THEME_COLORS = {
 /** Адаптивные классы вёрстки (отступы, типографика) */
 export const THEME_LAYOUT = {
   /** Внешние отступы контента */
-  pagePadding: 'px-4 sm:px-6 lg:px-8',
+  pagePadding: 'px-4 sm:px-6 lg:px-10 xl:px-12',
   /** Шапка */
-  headerPadding: 'px-4 py-3 sm:px-6 sm:py-4',
-  headerTitle: 'text-lg font-bold tracking-tight sm:text-xl md:text-2xl',
+  headerPadding: 'px-4 py-3 sm:px-6 sm:py-4 lg:px-10 lg:py-5 xl:px-12',
+  headerTitle:
+    'text-lg font-bold tracking-tight sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl',
   /** Основная область */
-  mainPadding: 'px-4 py-4 sm:px-6 sm:py-6 lg:px-8',
+  mainPadding: 'px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 xl:px-12 xl:py-10',
   /** Подвал + навигация */
-  footerPadding: 'px-2 py-2 sm:px-4 sm:py-3',
-  /** Ограничение ширины на очень широких экранах (остаётся «резиновым» до лимита) */
-  maxContentWidth: 'w-full max-w-full min-[1800px]:max-w-[90rem] min-[1800px]:mx-auto',
+  footerPadding: 'px-2 py-2 sm:px-4 sm:py-3 lg:px-8 lg:py-4 xl:px-10',
+  /** Оболочка на всю ширину вьюпорта; при необходимости узкий блок — внутри main */
+  maxContentWidth: 'w-full min-w-0 max-w-none',
 }

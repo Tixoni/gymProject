@@ -19,8 +19,12 @@ export const workoutService = {
       .toArray();
   },
 
-  async addExercise(title: string, muscleGroupId: number) {
-    return await db.exercisesTable.add({ title, muscleGroupId });
+  async addExercise(title: string, muscleGroupId: number, imgTitle?: string) {
+    return await db.exercisesTable.add({
+      title,
+      muscleGroupId,
+      ...(imgTitle != null && imgTitle !== '' ? { imgTitle } : {}),
+    });
   },
 
   // --- PERSONAL MAXIMUMS (PM) ---

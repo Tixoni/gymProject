@@ -3,7 +3,7 @@ import { useId, useState } from 'react'
 function IconCheck({ selected }) {
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition ${
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
           ? 'border-green-500/60 bg-green-950/40 text-green-300'
           : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
@@ -17,7 +17,7 @@ function IconCheck({ selected }) {
 function IconCross({ selected }) {
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition ${
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
           ? 'border-red-500/60 bg-red-950/40 text-red-300'
           : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
@@ -42,11 +42,11 @@ export default function WeekTemplate({
 
   const toggleCollapsed = () => setCollapsed((v) => !v)
   const headerClass =
-    'flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg p-2 transition hover:bg-zinc-900/30'
+    'flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg p-2 transition hover:bg-zinc-900/30 lg:gap-4 lg:p-3'
 
   return (
     <section
-      className="rounded-xl border border-zinc-800/90 bg-zinc-950/25 p-2"
+      className="rounded-xl border border-zinc-800/90 bg-zinc-950/25 p-2 lg:rounded-2xl lg:p-3"
       aria-label={`Неделя ${weekNumber}`}
     >
       <div
@@ -62,10 +62,10 @@ export default function WeekTemplate({
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-orange-400">
+            <span className="text-sm font-semibold text-orange-400 lg:text-base">
               Неделя {weekNumber}
             </span>
-            <span className="text-xs text-zinc-500">/ 18</span>
+            <span className="text-xs text-zinc-500 lg:text-sm">/ 18</span>
           </div>
         </div>
 
@@ -106,7 +106,7 @@ export default function WeekTemplate({
               e.stopPropagation()
               onWeekReset?.()
             }}
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition lg:h-8 lg:w-8 ${
               weekCompleted
                 ? 'border-green-500/40 bg-green-950/25 text-green-200 hover:bg-green-950/35'
                 : weekAllDefault
@@ -130,14 +130,14 @@ export default function WeekTemplate({
 
       <div
         id={collapseId}
-        className={`${collapsed ? 'hidden' : 'block'} pt-2`}
+        className={`${collapsed ? 'hidden' : 'block'} pt-2 lg:pt-3`}
       >
         {trainings.length ? (
           <ul className="list-none space-y-2 pl-0">
             {trainings.map((t, idx) => (
               <li key={t?.id ?? t?.trainingId ?? idx} className="rounded-lg">
                 {t?.node ?? (
-                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200 lg:p-4 lg:text-base">
                     {t?.title ?? t?.name ?? t?.trainingTitle ?? `Тренировка ${idx + 1}`}
                   </div>
                 )}
@@ -145,7 +145,7 @@ export default function WeekTemplate({
             ))}
           </ul>
         ) : (
-          <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500">
+          <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500 lg:p-4 lg:text-base">
             Тренировок пока нет.
           </div>
         )}

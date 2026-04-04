@@ -9,6 +9,8 @@ export interface Exercise {
   exerciseId?: number
   title: string
   muscleGroupId: number
+  /** Имя файла или подпуть внутри `src/assets/exercisesIcon` */
+  imgTitle?: string
 }
 
 export interface PersonalMaximum {
@@ -29,6 +31,8 @@ export interface SetRow {
   reps: number
   percentageOfPM: number
   status: string
+  /** Фактические повторения при status === 'partial' */
+  actualReps?: number
 }
 
 export interface Week {
@@ -90,6 +94,19 @@ class WorkoutAppDB extends Dexie {
       bodyWeightProviderTable: 'date, weight',
     })
 
+    this.version(2).stores({
+      muscleGroupsTable: '++muscleGroupId, title',
+      exercisesTable: '++exerciseId, title, muscleGroupId, imgTitle',
+      personalMaximumsTable: '++pmId, exerciseId, date, weight, reps, textComment',
+      setsTable:
+        '++setId, trainingId, exerciseId, setNumber, weight, percentageOfPM, reps, status',
+      weekTable: '++weekId, weekNumber, tonnage, IntensityInKG, IntensityInPercentage, totalReps',
+      trainingsTable:
+        '++trainingId, status, cycleId, plannedDate, weekId, dayOfTheWeek, tonnage, IntensityInKG, IntensityInPercentage, totalReps',
+      trainingCyclesTable: '++cycleId, muscleGroupId, status',
+      bodyWeightProviderTable: 'date, weight',
+    })
+
     this.on('populate', (transaction) => {
       void transaction.table('muscleGroupsTable').bulkAdd([
         { muscleGroupId: 1, title: 'Грудные мышцы' },
@@ -126,7 +143,7 @@ class WorkoutAppDB extends Dexie {
         { exerciseId: 15, title: 'Подъем штанги на бицепс', muscleGroupId: 5 },
         { exerciseId: 16, title: 'Подъем гантелей на бицепс', muscleGroupId: 5 },
         { exerciseId: 17, title: 'Молотки с гантелями', muscleGroupId: 5 },
-        { exerciseId: 18, title: 'Подъем на бицепс в кроссовере', muscleGroupId: 5 },
+        { exerciseId: 18, title: 'Подъем на бицепс обратным прямым хватом', muscleGroupId: 5 },
 
         { exerciseId: 19, title: 'Французский жим', muscleGroupId: 6 },
         { exerciseId: 20, title: 'Разгибание рук в кроссовере', muscleGroupId: 6 },

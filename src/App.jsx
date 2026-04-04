@@ -8,8 +8,9 @@ import iconPrograms from './assets/trainingPrograms.svg'
 import { THEME_COLORS, THEME_LAYOUT } from './theme'
 import './App.css'
 
-/** Отступы под фиксированные шапку и таббар */
-const MAIN_INSETS = 'pt-[4.25rem] pb-28 sm:pt-24 sm:pb-32'
+/** Отступы под фиксированные шапку и таббар (синхрон с высотой header/footer на lg+) */
+const MAIN_INSETS =
+  'pt-[4.25rem] pb-28 sm:pt-24 sm:pb-32 lg:pt-28 lg:pb-36 xl:pt-32 xl:pb-40'
 
 function App() {
   const [activeTab, setActiveTab] = useState('today')
@@ -57,7 +58,7 @@ function App() {
 
   return (
     <div
-      className={`flex min-h-dvh w-full flex-col ${THEME_LAYOUT.maxContentWidth} ${THEME_COLORS.appBackground}`}
+      className={`flex min-h-dvh min-h-full flex-1 flex-col ${THEME_LAYOUT.maxContentWidth} ${THEME_COLORS.appBackground}`}
     >
       <header
         className={`fixed left-0 right-0 top-0 z-10 w-full shrink-0 border-b ${THEME_COLORS.chromeBorder} ${THEME_COLORS.chrome} ${THEME_COLORS.chromeText} ${THEME_COLORS.headerShadow} ${THEME_LAYOUT.headerPadding}`}
@@ -74,17 +75,17 @@ function App() {
       </header>
 
       <main
-        className={`min-h-0 flex-1 overflow-y-auto text-left ${MAIN_INSETS} ${THEME_LAYOUT.mainPadding} ${THEME_COLORS.contentText}`}
+        className={`min-h-0 min-w-0 flex-1 overflow-y-auto text-left ${MAIN_INSETS} ${THEME_LAYOUT.mainPadding} ${THEME_COLORS.contentText}`}
       >
         {activeTab === 'today' && (
           <TodayTab />
         )}
         {activeTab === 'calendar' && (
           <div>
-            <h2 className={`text-base font-medium ${THEME_COLORS.heading}`}>
+            <h2 className={`text-base font-medium lg:text-xl ${THEME_COLORS.heading}`}>
               Расписание
             </h2>
-            <p className={`mt-2 text-sm ${THEME_COLORS.contentMuted}`}>
+            <p className={`mt-2 text-sm lg:mt-3 lg:text-base ${THEME_COLORS.contentMuted}`}>
               Здесь позже отобразим расписание.
             </p>
           </div>
@@ -103,7 +104,7 @@ function App() {
       <footer
         className={`fixed bottom-0 left-0 right-0 shrink-0 border-t ${THEME_COLORS.chromeBorder} ${THEME_COLORS.chrome} ${THEME_LAYOUT.footerPadding} pb-[max(0.5rem,env(safe-area-inset-bottom))]`}
       >
-        <nav className="flex w-full items-stretch justify-center gap-1 sm:gap-2 md:gap-3">
+        <nav className="flex w-full items-stretch justify-center gap-1 sm:gap-2 md:gap-3 lg:gap-4">
           <NavButton
             icon={iconToday}
             label="Сегодня"
