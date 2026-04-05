@@ -2,11 +2,14 @@ import { THEME_COLORS } from '../theme'
 
 export default function SetTemplate({ exerciseId, sets, reps, weight, intensity }) {
   const load =
-    weight != null && !Number.isNaN(Number(weight))
-      ? `${weight} кг`
-      : intensity != null
-        ? `${Math.round(Number(intensity) * 100)}%`
-        : '—'
+    typeof weight === 'string' &&
+    (weight.includes('кг') || weight.includes('%') || weight.includes('ПМ'))
+      ? weight
+      : weight != null && !Number.isNaN(Number(weight))
+        ? `${weight} кг`
+        : intensity != null
+          ? `${Math.round(Number(intensity) * 100)}%`
+          : '—'
 
   return (
     <div

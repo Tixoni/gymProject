@@ -1,4 +1,5 @@
 import Dexie, { type Table, type Transaction } from 'dexie'
+import { addDaysToDateKey, getDateKey } from '../utils/dateKeys'
 
 /** Префикс названий демо-цикла (автосид для тестов) */
 export const DEMO_CYCLE_TITLE_PREFIX = '[Демо]'
@@ -204,7 +205,9 @@ class WorkoutAppDB extends Dexie {
         { exerciseId: 39, title: 'Кистевой эспандер', muscleGroupId: 11 },
         { exerciseId: 40, title: 'Вис на турнике с fatgrips', muscleGroupId: 11 },
         ]),
-      ]).then(() => addDemoCycleInTransaction(transaction))
+      ])
+      /* Демо-цикл не в populate: таблица шаблонов подключается в v3+, в транзакции
+         первичного populate не все сторы гарантированы — демо создаётся в on('ready'). */
     })
   }
 }
@@ -213,6 +216,9 @@ export const db = new WorkoutAppDB()
 
 /** Два подхода бицепс + два подхода присед — только кг, без ПМ */
 async function addDemoCycleInTransaction(tx: Transaction) {
+  const todayKey = getDateKey(new Date()) ?? '2020-01-01'
+  const secondKey = addDaysToDateKey(todayKey, 2)
+
   const cycleId = await tx.table('trainingCyclesTable').add({
     muscleGroupId: 5,
     status: 'planned',
@@ -221,19 +227,49 @@ async function addDemoCycleInTransaction(tx: Transaction) {
     status: 'planned',
     cycleId,
     dayOfTheWeek: 1,
+    plannedDate: todayKey,
   })
   const tr2 = await tx.table('trainingsTable').add({
     status: 'planned',
     cycleId,
     dayOfTheWeek: 3,
+    plannedDate: secondKey,
   })
   const plan1 = [
-    { weightMode: 'kg', weightKg: 12.5, percentOfPm: 0, reps: 10 },
-    { weightMode: 'kg', weightKg: 12.5, percentOfPm: 0, reps: 10 },
+    {
+      weightMode: 'kg',
+      weightKg: 12.5,
+      percentOfPm: 0,
+      reps: 10,
+      displayWeightKg: 12.5,
+      displayPercentOfPm: 0,
+    },
+    {
+      weightMode: 'kg',
+      weightKg: 12.5,
+      percentOfPm: 0,
+      reps: 10,
+      displayWeightKg: 12.5,
+      displayPercentOfPm: 0,
+    },
   ]
   const plan2 = [
-    { weightMode: 'kg', weightKg: 20, percentOfPm: 0, reps: 5 },
-    { weightMode: 'kg', weightKg: 20, percentOfPm: 0, reps: 5 },
+    {
+      weightMode: 'kg',
+      weightKg: 20,
+      percentOfPm: 0,
+      reps: 5,
+      displayWeightKg: 20,
+      displayPercentOfPm: 0,
+    },
+    {
+      weightMode: 'kg',
+      weightKg: 20,
+      percentOfPm: 0,
+      reps: 5,
+      displayWeightKg: 20,
+      displayPercentOfPm: 0,
+    },
   ]
   let sn = 1
   for (const _ of plan1) {

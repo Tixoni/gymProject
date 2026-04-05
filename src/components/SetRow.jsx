@@ -5,6 +5,13 @@ function formatWeightKg(weight) {
   return Number.isInteger(n) ? String(n) : String(n).replace('.', ',')
 }
 
+function formatPercentPm(pct) {
+  if (pct == null || Number.isNaN(Number(pct))) return null
+  const n = Number(pct)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Number.isInteger(n) ? String(n) : String(n).replace('.', ',')
+}
+
 function statusBadge(status) {
   switch (status) {
     case 'completed':
@@ -23,6 +30,9 @@ function statusBadge(status) {
 export default function SetRow({ set, onClick }) {
   const badge = statusBadge(set?.status)
   const weight = formatWeightKg(set?.weight)
+  const pmStr = formatPercentPm(set?.percentageOfPM)
+  const weightLine =
+    pmStr != null ? `${weight} кг (${pmStr}% ПМ)` : `${weight} кг`
   const reps = set?.reps ?? '—'
   const partialSubtitle =
     set?.status === 'partial' &&
@@ -40,7 +50,7 @@ export default function SetRow({ set, onClick }) {
     >
       <div className="min-w-0">
         <div className="text-sm font-semibold text-zinc-100 lg:text-base">
-          {weight} кг × {reps}
+          {weightLine} × {reps}
         </div>
         <div className="mt-0.5 text-xs text-zinc-500 lg:text-sm">
           {partialSubtitle ?? `Подход ${set?.setNumber ?? '—'}`}

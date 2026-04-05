@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
+import { getDateKey } from '../../utils/dateKeys'
 import { createCycleWithWorkouts } from '../../trainingBuilder'
 import AddPersonalMaximumModal from './AddPersonalMaximumModal'
 
@@ -99,6 +100,7 @@ function buildParsedSetsForWorkout(w) {
 
 export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
   const [cycleTitle, setCycleTitle] = useState('')
+  const [scheduleStartKey, setScheduleStartKey] = useState(() => getDateKey(new Date()) ?? '')
   const [workouts, setWorkouts] = useState([emptyWorkout()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -162,6 +164,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
   useEffect(() => {
     if (!open) return
     setCycleTitle('')
+    setScheduleStartKey(getDateKey(new Date()) ?? '')
     setWorkouts([emptyWorkout()])
     setError('')
     setPmModalOpen(false)
@@ -190,6 +193,11 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
     const t = cycleTitle.trim()
     if (!t) {
       setError('Введите название цикла.')
+      return
+    }
+    const startKey = String(scheduleStartKey || '').trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startKey)) {
+      setError('Укажите дату первой тренировки (формат ГГГГ-ММ-ДД).')
       return
     }
     if (!workouts.length) {
@@ -235,6 +243,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
       const result = await createCycleWithWorkouts({
         cycleTitle: t,
         workouts: plans,
+        schedule: { startDateKey: startKey, stepDays: 2 },
       })
       onCreated?.(result)
       onClose?.()
@@ -639,6 +648,20 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                 placeholder="Например, сплит сила"
                 required
               />
+            </label>
+
+            <label className="mt-3 block text-xs font-medium text-zinc-400 lg:text-sm">
+              Дата 1-й тренировки <span className="text-red-400">*</span>
+              <input
+                type="date"
+                value={scheduleStartKey}
+                onChange={(e) => setScheduleStartKey(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+                required
+              />
+              <span className="mt-1 block text-[11px] text-zinc-600">
+                Следующие тренировки цикла: +2 дня, +4 дня… (для календаря)
+              </span>
             </label>
 
             <div className="mt-5 space-y-4">

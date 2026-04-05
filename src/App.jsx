@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CalendarTab from './components/CalendarTab'
 import NavButton from './components/NavButton'
 import TrainingProgramsTab from './components/TrainingProgramsTab'
 import TodayTab from './components/TodayTab'
@@ -16,32 +17,12 @@ function App() {
   const [activeTab, setActiveTab] = useState('today')
   const [programCycles, setProgramCycles] = useState([])
 
-  const computeTemplateCycles = async () => {
-    const startDate = new Date().toISOString().slice(0, 10)
-    return createAllTemplateCycles(startDate, {
-      personalMaximums: DEFAULT_PERSONAL_MAXIMUMS,
-      exercises: DEFAULT_EXERCISES,
-    })
+  const handleSeedPrograms = () => {
+    setProgramCycles([])
   }
 
-  const handleSeedPrograms = async () => {
-    const cycles = await computeTemplateCycles()
-    setProgramCycles(cycles)
-  }
-
-  const handleRebuildPrograms = async () => {
-    setProgramCycles((prev) => {
-      const prevById = Object.fromEntries((prev ?? []).map((c) => [c.id, c]))
-      return TRAINING_CYCLE_TEMPLATE_BLUEPRINTS.map((bp) => {
-        const old = prevById[bp.id]
-        return createCycleFromBlueprint(bp, {
-          startDate: old?.startDate ?? new Date().toISOString().slice(0, 10),
-          currentWeek: old?.currentWeek ?? 1,
-          personalMaximums: DEFAULT_PERSONAL_MAXIMUMS,
-          exercises: DEFAULT_EXERCISES,
-        })
-      })
-    })
+  const handleRebuildPrograms = () => {
+    setProgramCycles((prev) => prev ?? [])
   }
 
   const handleRefreshPrograms = async () => {
@@ -80,16 +61,7 @@ function App() {
         {activeTab === 'today' && (
           <TodayTab />
         )}
-        {activeTab === 'calendar' && (
-          <div>
-            <h2 className={`text-base font-medium lg:text-xl ${THEME_COLORS.heading}`}>
-              Расписание
-            </h2>
-            <p className={`mt-2 text-sm lg:mt-3 lg:text-base ${THEME_COLORS.contentMuted}`}>
-              Здесь позже отобразим расписание.
-            </p>
-          </div>
-        )}
+        {activeTab === 'calendar' && <CalendarTab />}
         {activeTab === 'trainingPrograms' && (
           <TrainingProgramsTab
             cycles={programCycles}

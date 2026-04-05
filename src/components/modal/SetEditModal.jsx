@@ -87,7 +87,17 @@ export default function SetEditModal({
 
   if (!open) return null
 
-  const weight = set?.weight ?? '—'
+  const wNum = set?.weight
+  const weightStr =
+    wNum != null && Number.isFinite(Number(wNum))
+      ? String(Number(wNum)).replace('.', ',')
+      : '—'
+  const pm = set?.percentageOfPM
+  const pmPart =
+    pm != null && Number.isFinite(Number(pm)) && Number(pm) > 0
+      ? ` (${String(Number(pm)).replace('.', ',')}% ПМ)`
+      : ''
+  const weightLine = `${weightStr} кг${pmPart}`
   const reps = set?.reps ?? '—'
 
   return (
@@ -112,7 +122,7 @@ export default function SetEditModal({
         <div className="px-5 py-4 lg:px-6 lg:py-5">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 p-4 lg:rounded-2xl lg:p-5">
             <div className="text-base font-semibold text-zinc-100 lg:text-lg">
-              {String(weight).toString().replace('.', ',')} кг × {reps}
+              {weightLine} × {reps}
             </div>
             <div className="mt-1 text-xs text-zinc-500 lg:text-sm">Целевые повторения</div>
           </div>

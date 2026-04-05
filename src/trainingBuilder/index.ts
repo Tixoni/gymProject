@@ -1,3 +1,4 @@
+import { addDaysToDateKey } from '../utils/dateKeys'
 import { db } from '../storage/db'
 
 export type WeightMode = 'kg' | 'percent'
@@ -44,6 +45,8 @@ function computeSetRow(
 export async function createCycleWithWorkouts(input: {
   cycleTitle: string
   workouts: CycleWorkoutPlanInput[]
+  /** Даты тренировок: первая = startDateKey, далее +stepDays */
+  schedule?: { startDateKey: string; stepDays?: number }
 }): Promise<{
   cycleId: number
   trainingIds: number[]
@@ -62,6 +65,8 @@ export async function createCycleWithWorkouts(input: {
   }
 
   const firstMg = input.workouts[0].muscleGroupId
+  const step = input.schedule?.stepDays ?? 2
+  const startKey = input.schedule?.startDateKey
 
   return await db.transaction(
     'rw',
@@ -83,10 +88,25 @@ export async function createCycleWithWorkouts(input: {
 
       for (let i = 0; i < input.workouts.length; i++) {
         const w = input.workouts[i]
+        const plannedDate =
+          startKey != null && startKey !== ''
+            ? addDaysToDateKey(startKey, i * step)
+            : undefined
+
         const trainingId = await db.trainingsTable.add({
           status: 'planned',
           cycleId,
           dayOfTheWeek: i + 1,
+          plannedDate,
+        })
+
+        const enrichedSets = w.sets.map((s) => {
+          const { weight, percentageOfPM } = computeSetRow(s, w.pmMaxWeightKg)
+          return {
+            ...s,
+            displayWeightKg: Math.round(weight * 1000) / 1000,
+            displayPercentOfPm: Math.round(percentageOfPM * 100) / 100,
+          }
         })
 
         let setNumber = 1
@@ -113,7 +133,7 @@ export async function createCycleWithWorkouts(input: {
               : titleBase,
           muscleGroupId: w.muscleGroupId,
           exerciseId: w.exerciseId,
-          setsJson: JSON.stringify(w.sets),
+          setsJson: JSON.stringify(enrichedSets),
           createdAt: new Date().toISOString(),
           cycleId,
           trainingId,

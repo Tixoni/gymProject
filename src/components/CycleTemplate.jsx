@@ -27,7 +27,7 @@ export default function CycleTemplate({ cycle, onRemove }) {
         {onRemove ? (
           <button
             type="button"
-            onClick={() => onRemove(cycle?.id)}
+            onClick={() => onRemove(cycle)}
             className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-1.5 text-xs text-red-200 hover:bg-red-950/70"
           >
             Удалить
