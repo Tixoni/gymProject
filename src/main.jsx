@@ -9,10 +9,7 @@ if (import.meta.env.DEV) {
   globalThis.workoutService = workoutService
 }
 
-void db
-  .open()
-  .then(() => workoutService.backfillMissingPlannedDates())
-  .catch(() => {})
+void db.open().catch(() => {})
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -62,6 +62,7 @@ export default function TrainingTemplate({
   onUpdateSet,
   onMarkTrainingCompleted,
   onMarkTrainingNotCompleted,
+  onTrainingHeaderClick,
 }) {
   const collapseId = useId()
   const [collapsed, setCollapsed] = useState(false)
@@ -87,19 +88,26 @@ export default function TrainingTemplate({
 
   return (
     <section className="rounded-xl border border-zinc-800/90 bg-zinc-950/25 lg:rounded-2xl">
-      <div
-        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 transition hover:bg-zinc-900/30 lg:gap-4 lg:px-4 lg:py-3"
-        role="button"
-        tabIndex={0}
-        aria-controls={collapseId}
-        aria-expanded={!collapsed}
-        onClick={() => setCollapsed((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') setCollapsed((v) => !v)
-        }}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/20 bg-orange-950/15 text-orange-300/90 lg:h-10 lg:w-10 lg:text-xl">
+      <div className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 lg:gap-4 lg:px-4 lg:py-3">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-controls={collapseId}
+          aria-expanded={!collapsed}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg py-1 transition hover:bg-zinc-900/30"
+          onClick={() => {
+            if (onTrainingHeaderClick) onTrainingHeaderClick()
+            else setCollapsed((v) => !v)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              if (onTrainingHeaderClick) onTrainingHeaderClick()
+              else setCollapsed((v) => !v)
+            }
+          }}
+        >
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-orange-400/20 bg-orange-950/15 text-orange-300/90 lg:h-10 lg:w-10 lg:text-xl">
             🗓
           </span>
           <div className="min-w-0">
@@ -113,11 +121,8 @@ export default function TrainingTemplate({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <fieldset
-            className="flex items-center gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="flex shrink-0 items-center gap-2">
+          <fieldset className="flex items-center gap-2">
             <legend className="sr-only">Статус тренировки</legend>
             <label className="cursor-pointer">
               <input
@@ -141,14 +146,18 @@ export default function TrainingTemplate({
             </label>
           </fieldset>
 
-
-          <span
-            className={`inline-flex items-center justify-center rounded-lg text-zinc-400 transition ${
+          <button
+            type="button"
+            aria-controls={collapseId}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Развернуть тренировку' : 'Свернуть тренировку'}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-900/40 ${
               collapsed ? '' : 'rotate-180'
             }`}
+            onClick={() => setCollapsed((v) => !v)}
           >
             ▾
-          </span>
+          </button>
         </div>
       </div>
 
@@ -162,8 +171,15 @@ export default function TrainingTemplate({
                   meta?.title ??
                   (typeof meta === 'string' ? meta : null) ??
                   (g.exerciseId === 'unknown' ? 'Без упражнения' : `Упражнение ${g.exerciseId}`)
+                const titleForIcon =
+                  meta?.title ?? (typeof meta === 'string' ? meta : undefined)
                 const iconSrc = getExerciseIconSrc(
-                  typeof meta === 'object' && meta?.imgTitle != null ? meta.imgTitle : undefined,
+                  typeof meta === 'object' &&
+                    meta?.imgTitle != null &&
+                    String(meta.imgTitle).trim() !== ''
+                    ? meta.imgTitle
+                    : undefined,
+                  titleForIcon,
                 )
 
                 return (

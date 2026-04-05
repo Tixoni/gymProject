@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useMemo } from 'react'
 import { db } from '../storage/db'
 import { workoutService } from '../storage/workoutService'
+import { getDateKey, isValidCalendarDateKey } from '../utils/dateKeys'
 import InfoAccordion from './InfoAccordion'
 import TrainingTemplate from './TrainingTemplate'
 import WeekTemplate from './WeekTemplate'
@@ -22,6 +23,8 @@ function isTrainingAllDefault(sets) {
 }
 
 export default function TodayTab() {
+  const todayKey = useMemo(() => getDateKey(new Date()) ?? '', [])
+
   const exercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
 
   const exercisesById = useMemo(() => {
@@ -40,7 +43,10 @@ export default function TodayTab() {
   )
 
   const weeksConfig = useMemo(() => {
-    const blocks = trainingBlocks ?? []
+    const blocks = (trainingBlocks ?? []).filter((b) => {
+      const d = b.training.plannedDate
+      return isValidCalendarDateKey(d) && d === todayKey
+    })
     if (!blocks.length) return []
     const trainingIds = blocks.map((b) => b.training.trainingId).filter(Boolean)
     const trainings = blocks.map((b, i) => {
@@ -63,7 +69,7 @@ export default function TodayTab() {
         trainings,
       },
     ]
-  }, [trainingBlocks])
+  }, [trainingBlocks, todayKey])
 
   const setsByTrainingId = useMemo(() => {
     const map = {}
@@ -73,6 +79,8 @@ export default function TodayTab() {
     }
     return map
   }, [trainingBlocks])
+
+  const hasAnyCycleTrainings = (trainingBlocks ?? []).length > 0
 
   const markTrainingAllSets = useCallback(async (trainingId, status) => {
     const list = setsByTrainingId[trainingId]
@@ -111,13 +119,14 @@ export default function TodayTab() {
     return (
       <div className="mt-6 lg:mt-8">
         <InfoAccordion title="Справка">
-          Здесь отображаются тренировки из циклов в локальной базе. При первом
-          запуске добавляется демо-цикл; новые программы создаются на вкладке
-          «Программы».
+          Здесь только тренировки с датой на сегодня. Сначала создайте цикл на
+          вкладке «Программы», затем нажмите «Составить программу» и выберите дни
+          недели — после этого даты появятся в календаре и здесь в нужный день.
         </InfoAccordion>
         <p className="mt-4 text-sm text-zinc-500">
-          Нет тренировок с подходами. Откройте «Программы» и создайте цикл или
-          дождитесь инициализации демо-данных.
+          {hasAnyCycleTrainings
+            ? 'На сегодня нет запланированных тренировок (проверьте календарь или составьте программу с нужными днями недели).'
+            : 'Нет тренировок с подходами. Откройте «Программы» и создайте цикл или дождитесь демо-данных.'}
         </p>
       </div>
     )

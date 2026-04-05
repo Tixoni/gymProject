@@ -2,7 +2,6 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
-import { getDateKey } from '../../utils/dateKeys'
 import { createCycleWithWorkouts } from '../../trainingBuilder'
 import AddPersonalMaximumModal from './AddPersonalMaximumModal'
 
@@ -25,8 +24,6 @@ function defaultBulk() {
 function emptyWorkout() {
   return {
     id: newRowId(),
-    muscleGroupId: '',
-    exerciseId: '',
     bulk: defaultBulk(),
     customizeSets: false,
     sets: [],
@@ -100,7 +97,8 @@ function buildParsedSetsForWorkout(w) {
 
 export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
   const [cycleTitle, setCycleTitle] = useState('')
-  const [scheduleStartKey, setScheduleStartKey] = useState(() => getDateKey(new Date()) ?? '')
+  const [cycleMuscleGroupId, setCycleMuscleGroupId] = useState('')
+  const [cycleExerciseId, setCycleExerciseId] = useState('')
   const [workouts, setWorkouts] = useState([emptyWorkout()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -164,7 +162,8 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
   useEffect(() => {
     if (!open) return
     setCycleTitle('')
-    setScheduleStartKey(getDateKey(new Date()) ?? '')
+    setCycleMuscleGroupId('')
+    setCycleExerciseId('')
     setWorkouts([emptyWorkout()])
     setError('')
     setPmModalOpen(false)
@@ -195,37 +194,34 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
       setError('Введите название цикла.')
       return
     }
-    const startKey = String(scheduleStartKey || '').trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startKey)) {
-      setError('Укажите дату первой тренировки (формат ГГГГ-ММ-ДД).')
-      return
-    }
     if (!workouts.length) {
       setError('Добавьте хотя бы одну тренировку.')
       return
     }
 
+    const mg = Number(cycleMuscleGroupId)
+    const ex = Number(cycleExerciseId)
+    if (!mg || !ex) {
+      setError('Выберите мышечную группу и упражнение цикла (одно на все тренировки).')
+      return
+    }
+
+    const pmMax = await workoutService.getMaxPmWeightForExercise(ex)
+
     const plans = []
     for (let i = 0; i < workouts.length; i++) {
       const w = workouts[i]
-      const mg = Number(w.muscleGroupId)
-      const ex = Number(w.exerciseId)
-      if (!mg || !ex) {
-        setError(`Тренировка ${i + 1}: выберите мышечную группу и упражнение.`)
-        return
-      }
       const built = buildParsedSetsForWorkout(w)
       if (!built.ok) {
         setError(`Тренировка ${i + 1}: ${built.message}`)
         return
       }
-      const pmMax = await workoutService.getMaxPmWeightForExercise(ex)
       if (
         built.parsed.some((x) => x.weightMode === 'percent') &&
         pmMax <= 0
       ) {
         setError(
-          `Тренировка ${i + 1}: для процентов от ПМ нужен рекорд по упражнению.`,
+          `Тренировка ${i + 1}: для процентов от ПМ нужен рекорд по упражнению цикла.`,
         )
         openPmForExercise(ex, exerciseTitle(ex))
         return
@@ -243,15 +239,13 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
       const result = await createCycleWithWorkouts({
         cycleTitle: t,
         workouts: plans,
-        schedule: { startDateKey: startKey, stepDays: 2 },
       })
       onCreated?.(result)
       onClose?.()
     } catch (err) {
       if (err?.message === 'PM_REQUIRED') {
         setError('Добавьте личный рекорд для упражнений с процентами от ПМ.')
-        const w = workouts.find((x) => Number(x.exerciseId) > 0)
-        if (w) openPmForExercise(Number(w.exerciseId), exerciseTitle(Number(w.exerciseId)))
+        if (ex) openPmForExercise(ex, exerciseTitle(ex))
       } else {
         setError(err?.message ?? 'Не удалось сохранить данные.')
       }
@@ -261,9 +255,8 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
   }
 
   const renderWorkoutBlock = (w, index) => {
-    const mgNum = Number(w.muscleGroupId)
-    const exNum = Number(w.exerciseId)
-    const exList = exercisesForGroup(w.muscleGroupId)
+    const mgNum = Number(cycleMuscleGroupId)
+    const exNum = Number(cycleExerciseId)
 
     const startCustomize = () => {
       const n = Math.max(
@@ -299,50 +292,8 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
         className="rounded-xl border border-zinc-700/80 bg-zinc-900/30 p-3 lg:p-4"
       >
         <div className="text-xs font-semibold uppercase tracking-wide text-orange-300/90">
-          Тренировка {index + 1}
+          Тренировка {index + 1} (нагрузка / подходы)
         </div>
-
-        <label className="mt-3 block text-xs font-medium text-zinc-400 lg:text-sm">
-          Мышечная группа <span className="text-red-400">*</span>
-          <select
-            value={w.muscleGroupId}
-            onChange={(e) => {
-              updateWorkout(w.id, {
-                muscleGroupId: e.target.value,
-                exerciseId: '',
-              })
-            }}
-            className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
-            required
-          >
-            <option value="">Выберите…</option>
-            {(muscleGroups ?? []).map((g) => (
-              <option key={g.muscleGroupId} value={g.muscleGroupId}>
-                {g.title}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="mt-3 block text-xs font-medium text-zinc-400 lg:text-sm">
-          Упражнение <span className="text-red-400">*</span>
-          <select
-            value={w.exerciseId}
-            onChange={(e) =>
-              updateWorkout(w.id, { exerciseId: e.target.value })
-            }
-            disabled={!mgNum}
-            className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 enabled:cursor-pointer disabled:opacity-50 lg:py-3"
-            required
-          >
-            <option value="">{mgNum ? 'Выберите…' : 'Сначала группа'}</option>
-            {exList.map((ex) => (
-              <option key={ex.exerciseId} value={ex.exerciseId}>
-                {ex.title}
-              </option>
-            ))}
-          </select>
-        </label>
 
         <div className="mt-4 border-t border-zinc-800 pt-3">
           <div className="text-sm font-semibold text-zinc-200">
@@ -613,7 +564,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
               id="cycle-modal-title"
               className="mt-2 text-lg font-semibold text-zinc-50 lg:text-xl"
             >
-              Цикл и одна или несколько тренировок
+              Цикл: одно упражнение, несколько тренировок
             </h2>
           </div>
 
@@ -650,23 +601,52 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
               />
             </label>
 
-            <label className="mt-3 block text-xs font-medium text-zinc-400 lg:text-sm">
-              Дата 1-й тренировки <span className="text-red-400">*</span>
-              <input
-                type="date"
-                value={scheduleStartKey}
-                onChange={(e) => setScheduleStartKey(e.target.value)}
+            <p className="mt-3 rounded-xl border border-zinc-800/80 bg-zinc-900/20 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 lg:text-xs">
+              В цикле одно упражнение на все дни; ниже — отдельные тренировки (разные
+              планы подходов). Даты — через «Составить программу».
+            </p>
+
+            <label className="mt-4 block text-xs font-medium text-zinc-400 lg:text-sm">
+              Мышечная группа цикла <span className="text-red-400">*</span>
+              <select
+                value={cycleMuscleGroupId}
+                onChange={(e) => {
+                  setCycleMuscleGroupId(e.target.value)
+                  setCycleExerciseId('')
+                }}
                 className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
-                required
-              />
-              <span className="mt-1 block text-[11px] text-zinc-600">
-                Следующие тренировки цикла: +2 дня, +4 дня… (для календаря)
-              </span>
+              >
+                <option value="">Выберите…</option>
+                {(muscleGroups ?? []).map((g) => (
+                  <option key={g.muscleGroupId} value={g.muscleGroupId}>
+                    {g.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="mt-3 block text-xs font-medium text-zinc-400 lg:text-sm">
+              Упражнение цикла <span className="text-red-400">*</span>
+              <select
+                value={cycleExerciseId}
+                onChange={(e) => setCycleExerciseId(e.target.value)}
+                disabled={!Number(cycleMuscleGroupId)}
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 enabled:cursor-pointer disabled:opacity-50 lg:py-3"
+              >
+                <option value="">
+                  {Number(cycleMuscleGroupId) ? 'Выберите…' : 'Сначала группа'}
+                </option>
+                {exercisesForGroup(cycleMuscleGroupId).map((ex) => (
+                  <option key={ex.exerciseId} value={ex.exerciseId}>
+                    {ex.title}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <div className="mt-5 space-y-4">
               <div className="text-sm font-semibold text-zinc-200">
-                Тренировки в цикле
+                Тренировки в цикле (только план подходов)
               </div>
               {workouts.map((w, i) => renderWorkoutBlock(w, i))}
             </div>

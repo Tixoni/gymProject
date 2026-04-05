@@ -1,8 +1,10 @@
 import Dexie, { type Table, type Transaction } from 'dexie'
-import { addDaysToDateKey, getDateKey } from '../utils/dateKeys'
 
 /** Префикс названий демо-цикла (автосид для тестов) */
 export const DEMO_CYCLE_TITLE_PREFIX = '[Демо]'
+
+/** Цикл создан через «Составить программу» (все тренировки с датами) */
+export const SCHEDULED_PROGRAM_CYCLE_KIND = 'scheduled_program'
 
 export interface MuscleGroup {
   muscleGroupId?: number
@@ -65,6 +67,12 @@ export interface TrainingCycle {
   cycleId?: number
   muscleGroupId: number
   status: string
+  /** @see SCHEDULED_PROGRAM_CYCLE_KIND */
+  cycleKind?: string
+  /** Заголовок для программы (scheduled_program) */
+  programTitle?: string
+  /** Название обычного цикла (для списков вместо «Цикл #id») */
+  cycleTitle?: string
 }
 
 export interface BodyWeightEntry {
@@ -132,6 +140,15 @@ class WorkoutAppDB extends Dexie {
     this.version(4).stores({
       workoutTemplatesTable:
         '++templateId, title, muscleGroupId, exerciseId, createdAt, cycleId, trainingId',
+    })
+
+    this.version(5).stores({
+      trainingCyclesTable: '++cycleId, muscleGroupId, status, cycleKind',
+    })
+
+    this.version(6).stores({
+      trainingCyclesTable:
+        '++cycleId, muscleGroupId, status, cycleKind, cycleTitle',
     })
 
     this.on('ready', () => {
@@ -216,24 +233,22 @@ export const db = new WorkoutAppDB()
 
 /** Два подхода бицепс + два подхода присед — только кг, без ПМ */
 async function addDemoCycleInTransaction(tx: Transaction) {
-  const todayKey = getDateKey(new Date()) ?? '2020-01-01'
-  const secondKey = addDaysToDateKey(todayKey, 2)
-
   const cycleId = await tx.table('trainingCyclesTable').add({
     muscleGroupId: 5,
     status: 'planned',
+    cycleTitle: `${DEMO_CYCLE_TITLE_PREFIX} Бицепс (2 тренировки)`,
   })
   const tr1 = await tx.table('trainingsTable').add({
     status: 'planned',
     cycleId,
     dayOfTheWeek: 1,
-    plannedDate: todayKey,
+    plannedDate: '',
   })
   const tr2 = await tx.table('trainingsTable').add({
     status: 'planned',
     cycleId,
     dayOfTheWeek: 3,
-    plannedDate: secondKey,
+    plannedDate: '',
   })
   const plan1 = [
     {
@@ -256,18 +271,18 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   const plan2 = [
     {
       weightMode: 'kg',
-      weightKg: 20,
+      weightKg: 14,
       percentOfPm: 0,
-      reps: 5,
-      displayWeightKg: 20,
+      reps: 8,
+      displayWeightKg: 14,
       displayPercentOfPm: 0,
     },
     {
       weightMode: 'kg',
-      weightKg: 20,
+      weightKg: 14,
       percentOfPm: 0,
-      reps: 5,
-      displayWeightKg: 20,
+      reps: 8,
+      displayWeightKg: 14,
       displayPercentOfPm: 0,
     },
   ]
@@ -287,10 +302,10 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   for (const _ of plan2) {
     await tx.table('setsTable').add({
       trainingId: tr2,
-      exerciseId: 23,
+      exerciseId: 15,
       setNumber: sn++,
-      weight: 20,
-      reps: 5,
+      weight: 14,
+      reps: 8,
       percentageOfPM: 0,
       status: 'not_completed',
     })
@@ -305,9 +320,9 @@ async function addDemoCycleInTransaction(tx: Transaction) {
     trainingId: tr1,
   })
   await tx.table('workoutTemplatesTable').add({
-    title: `${DEMO_CYCLE_TITLE_PREFIX} Приседания со штангой`,
-    muscleGroupId: 7,
-    exerciseId: 23,
+    title: `${DEMO_CYCLE_TITLE_PREFIX} Трен. 2 — тяжелее`,
+    muscleGroupId: 5,
+    exerciseId: 15,
     setsJson: JSON.stringify(plan2),
     createdAt: new Date().toISOString(),
     cycleId,
