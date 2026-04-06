@@ -3,7 +3,12 @@ import {
   createComposedProgramWithSchedule,
   type WorkoutTemplateSetEntry,
 } from '../trainingBuilder'
-import { formatCommaNum, isValidCalendarDateKey } from '../utils/dateKeys'
+import {
+  formatCommaNum,
+  getDateKey,
+  isValidCalendarDateKey,
+  parseDateKeyLocal,
+} from '../utils/dateKeys'
 import type { SetRow, Training } from './db'
 import { SCHEDULED_PROGRAM_CYCLE_KIND, db } from './db'
 
@@ -68,6 +73,16 @@ export const workoutService = {
   async addBodyWeight(weight: number) {
     const date = new Date().toISOString().split('T')[0]; 
     return await db.bodyWeightProviderTable.add({ date, weight });
+  },
+
+  async saveBodyWeight(date: string, weight: number) {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      throw new Error('BAD_DATE')
+    }
+    if (!Number.isFinite(weight) || weight <= 0) {
+      throw new Error('BAD_WEIGHT')
+    }
+    await db.bodyWeightProviderTable.put({ date, weight })
   },
   
   async getWeightHistory() {
@@ -366,6 +381,59 @@ export const workoutService = {
     } else {
       await db.trainingCyclesTable.update(cycleId, { cycleTitle: t })
     }
+  },
+
+  /** Перераспределить тренировки программы по выбранным дням недели. */
+  async rescheduleProgramTrainings(cycleId: number, weekdays: number[]) {
+    const c = await db.trainingCyclesTable.get(cycleId)
+    if (!c) throw new Error('NOT_FOUND')
+    if (c.cycleKind !== SCHEDULED_PROGRAM_CYCLE_KIND) {
+      throw new Error('NOT_PROGRAM')
+    }
+    const allowed = new Set(
+      (weekdays ?? []).filter(
+        (d) => Number.isInteger(d) && d >= 1 && d <= 7,
+      ),
+    )
+    if (!allowed.size) throw new Error('NO_WEEKDAYS')
+
+    const trainings = await db.trainingsTable
+      .where('cycleId')
+      .equals(cycleId)
+      .toArray()
+    trainings.sort((a, b) => (a.trainingId ?? 0) - (b.trainingId ?? 0))
+    if (!trainings.length) return
+
+    const firstDate =
+      trainings.find((t) => isValidCalendarDateKey(t.plannedDate))?.plannedDate ??
+      getDateKey(new Date()) ??
+      ''
+    const parsed = parseDateKeyLocal(firstDate)
+    if (!parsed) throw new Error('BAD_START_DATE')
+    const cur = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+
+    const nextDate = () => {
+      for (let i = 0; i < 800; i += 1) {
+        const js = cur.getDay()
+        const dow = js === 0 ? 7 : js
+        const key = getDateKey(cur)
+        cur.setDate(cur.getDate() + 1)
+        if (key && allowed.has(dow)) return { key, dow }
+      }
+      throw new Error('DATE_EXHAUSTED')
+    }
+
+    await db.transaction('rw', [db.trainingsTable], async () => {
+      for (const t of trainings) {
+        const tid = t.trainingId
+        if (tid == null) continue
+        const slot = nextDate()
+        await db.trainingsTable.update(tid, {
+          plannedDate: slot.key,
+          dayOfTheWeek: slot.dow,
+        })
+      }
+    })
   },
 
   /** Удалить цикл, все его тренировки, сеты и шаблоны с этим cycleId */
@@ -697,12 +765,13 @@ export const workoutService = {
     const template = await db.workoutTemplatesTable.get(templateId)
     if (template?.trainingId == null) return null
     const trainingId = template.trainingId
+    const training = await db.trainingsTable.get(trainingId)
     const exId = template.exerciseId
     const allSets = await db.setsTable.where('trainingId').equals(trainingId).toArray()
     const sets = allSets
       .filter((s) => s.exerciseId === exId)
       .sort((a, b) => (a.setNumber ?? 0) - (b.setNumber ?? 0))
-    return { template, sets, trainingId }
+    return { template, sets, trainingId, training }
   },
 
   async updateTrainingFromTemplateForm(
@@ -713,6 +782,7 @@ export const workoutService = {
       exerciseId: number
       sets: WorkoutTemplateSetEntry[]
       pmMaxWeightKg: number
+      dayOfTheWeek?: number
     },
   ) {
     const tmpl = await db.workoutTemplatesTable.get(templateId)
@@ -731,7 +801,7 @@ export const workoutService = {
 
     await db.transaction(
       'rw',
-      [db.setsTable, db.workoutTemplatesTable],
+      [db.setsTable, db.workoutTemplatesTable, db.trainingsTable],
       async () => {
         const existing = await db.setsTable
           .where('trainingId')
@@ -769,6 +839,12 @@ export const workoutService = {
           exerciseId: input.exerciseId,
           setsJson: JSON.stringify(enrichedSets),
         })
+        const dow = Number(input.dayOfTheWeek)
+        if (Number.isFinite(dow) && dow >= 1 && dow <= 7) {
+          await db.trainingsTable.update(trainingId, {
+            dayOfTheWeek: Math.trunc(dow),
+          })
+        }
       },
     )
   },

@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
+import { THEME_COLORS } from '../../theme'
 import AddPersonalMaximumModal from './AddPersonalMaximumModal'
 
 function newRowId() {
@@ -69,6 +70,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
   const [workTitle, setWorkTitle] = useState('')
   const [muscleGroupId, setMuscleGroupId] = useState('')
   const [exerciseId, setExerciseId] = useState('')
+  const [dayOfWeek, setDayOfWeek] = useState('')
   const [setRows, setSetRows] = useState([])
   const [loadError, setLoadError] = useState('')
   const [error, setError] = useState('')
@@ -115,6 +117,11 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
         setWorkTitle(template.title ?? '')
         setMuscleGroupId(String(template.muscleGroupId ?? ''))
         setExerciseId(String(template.exerciseId ?? ''))
+        setDayOfWeek(
+          snap?.training?.dayOfTheWeek != null
+            ? String(snap.training.dayOfTheWeek)
+            : '',
+        )
 
         let plan = []
         try {
@@ -206,6 +213,11 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
       setError('Выберите мышечную группу и упражнение.')
       return
     }
+    const dow = Number(dayOfWeek)
+    if (!Number.isFinite(dow) || dow < 1 || dow > 7) {
+      setError('Выберите день проведения (Пн–Вс).')
+      return
+    }
     if (!setRows.length) {
       setError('Добавьте хотя бы один подход.')
       return
@@ -235,6 +247,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
         exerciseId: ex,
         sets: built.parsed,
         pmMaxWeightKg: pmMax,
+        dayOfTheWeek: dow,
       })
       onSaved?.()
       onClose?.()
@@ -256,23 +269,23 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
       <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center lg:p-6">
         <button
           type="button"
-          className="absolute inset-0 bg-black/70"
+          className={`absolute inset-0 ${THEME_COLORS.modalBackdrop}`}
           aria-label="Закрыть"
           onClick={onClose}
         />
         <div
-          className="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950/95 shadow-2xl lg:max-w-xl"
+          className={`relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border ${THEME_COLORS.modalBorder} ${THEME_COLORS.modalPanel} shadow-2xl lg:max-w-xl`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-training-title"
         >
-          <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/95 px-5 py-4">
-            <div className="text-[11px] font-semibold tracking-wide text-orange-300/90">
+          <div className={`sticky top-0 z-10 border-b ${THEME_COLORS.modalSectionBorder} ${THEME_COLORS.modalPanel} px-5 py-4`}>
+            <div className={`text-[11px] font-semibold tracking-wide ${THEME_COLORS.accentText}`}>
               РЕДАКТИРОВАНИЕ
             </div>
             <h2
               id="edit-training-title"
-              className="mt-2 text-lg font-semibold text-zinc-50"
+              className={`mt-2 text-lg font-semibold ${THEME_COLORS.heading}`}
             >
               Тренировка (блок)
             </h2>
@@ -280,14 +293,14 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
 
           <form onSubmit={handleSubmit} className="px-5 py-4">
             {loadError ? (
-              <p className="mb-3 text-sm text-red-300">{loadError}</p>
+              <p className={`mb-3 text-sm ${THEME_COLORS.errorText}`}>{loadError}</p>
             ) : null}
             {loading ? (
-              <p className="mb-3 text-sm text-zinc-500">Загрузка…</p>
+              <p className={`mb-3 text-sm ${THEME_COLORS.dateTextSecondary}`}>Загрузка…</p>
             ) : null}
 
             {error ? (
-              <div className="mb-4 rounded-xl border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+              <div className={`mb-4 rounded-xl border ${THEME_COLORS.errorBorder} ${THEME_COLORS.errorBg} px-3 py-2 text-sm ${THEME_COLORS.errorText}`}>
                 {error}
               </div>
             ) : null}
@@ -318,6 +331,24 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
                     {g.title}
                   </option>
                 ))}
+              </select>
+            </label>
+
+            <label className="mt-3 block text-xs font-medium text-zinc-400">
+              День проведения
+              <select
+                value={dayOfWeek}
+                onChange={(e) => setDayOfWeek(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100"
+              >
+                <option value="">Выберите…</option>
+                <option value="1">Понедельник</option>
+                <option value="2">Вторник</option>
+                <option value="3">Среда</option>
+                <option value="4">Четверг</option>
+                <option value="5">Пятница</option>
+                <option value="6">Суббота</option>
+                <option value="7">Воскресенье</option>
               </select>
             </label>
 

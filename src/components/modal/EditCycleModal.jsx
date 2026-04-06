@@ -4,6 +4,16 @@ import { SCHEDULED_PROGRAM_CYCLE_KIND, db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
 
+const WEEKDAYS = [
+  { dow: 1, label: 'Пн' },
+  { dow: 2, label: 'Вт' },
+  { dow: 3, label: 'Ср' },
+  { dow: 4, label: 'Чт' },
+  { dow: 5, label: 'Пт' },
+  { dow: 6, label: 'Сб' },
+  { dow: 7, label: 'Вс' },
+]
+
 export default function EditCycleModal({
   open,
   cycleId,
@@ -16,6 +26,7 @@ export default function EditCycleModal({
   const [cycleTitle, setCycleTitle] = useState('')
   const [muscleGroupId, setMuscleGroupId] = useState('')
   const [exerciseId, setExerciseId] = useState('')
+  const [weekdays, setWeekdays] = useState(() => new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -66,6 +77,10 @@ export default function EditCycleModal({
         setCycleTitle(name)
         setMuscleGroupId(String(c?.muscleGroupId ?? tmpl?.muscleGroupId ?? ''))
         setExerciseId(String(tmpl?.exerciseId ?? ''))
+        const dows = trainings
+          .map((t) => Number(t.dayOfTheWeek))
+          .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7)
+        setWeekdays(new Set(dows))
       } catch (e) {
         if (!cancelled) setError('Не удалось загрузить цикл.')
         console.error(e)
@@ -106,7 +121,15 @@ export default function EditCycleModal({
     setSubmitting(true)
     try {
       await workoutService.updateCycleTitle(cycleId, titleTrim)
-      if (!isScheduledProgram) {
+      if (isScheduledProgram) {
+        const dows = [...weekdays].sort((a, b) => a - b)
+        if (!dows.length) {
+          setError('Выберите хотя бы один день недели.')
+          setSubmitting(false)
+          return
+        }
+        await workoutService.rescheduleProgramTrainings(cycleId, dows)
+      } else {
         const mg = Number(muscleGroupId)
         const ex = Number(exerciseId)
         if (!mg || !ex) {
@@ -129,6 +152,15 @@ export default function EditCycleModal({
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const toggleWeekday = (dow) => {
+    setWeekdays((prev) => {
+      const next = new Set(prev)
+      if (next.has(dow)) next.delete(dow)
+      else next.add(dow)
+      return next
+    })
   }
 
   const handleDuplicate = async () => {
@@ -165,18 +197,20 @@ export default function EditCycleModal({
 
   const mgNum = Number(muscleGroupId)
   const exList = exercisesForGroup(muscleGroupId)
-  const heading = isScheduledProgram ? 'Программа' : 'Цикл'
+  const headingText = isScheduledProgram
+    ? 'Редактирование программы'
+    : 'Редактирование цикла'
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center lg:p-6">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70"
+        className={`absolute inset-0 ${THEME_COLORS.modalBackdrop}`}
         aria-label="Закрыть"
         onClick={onClose}
       />
       <div
-        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl"
+        className={`relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border ${THEME_COLORS.modalBorder} ${THEME_COLORS.modalPanel} p-5 shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-cycle-title"
@@ -185,31 +219,31 @@ export default function EditCycleModal({
           id="edit-cycle-title"
           className={`text-lg font-semibold ${THEME_COLORS.heading}`}
         >
-          Редактировать {heading.toLowerCase()}
+          {headingText}
         </h2>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className={`mt-1 text-xs ${THEME_COLORS.dateTextSecondary}`}>
           {isScheduledProgram
             ? 'Название программы. Упражнения и подходы настраиваются в каждом блоке отдельно.'
             : 'Название цикла и одно упражнение на все тренировки; веса в % от ПМ пересчитываются по новому ПМ.'}
         </p>
 
         {loading ? (
-          <p className="mt-3 text-sm text-zinc-500">Загрузка…</p>
+          <p className={`mt-3 text-sm ${THEME_COLORS.dateTextSecondary}`}>Загрузка…</p>
         ) : null}
         {error ? (
-          <div className="mt-3 rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+          <div className={`mt-3 rounded-lg border ${THEME_COLORS.errorBorder} ${THEME_COLORS.errorBg} px-3 py-2 text-sm ${THEME_COLORS.errorText}`}>
             {error}
           </div>
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-          <label className="block text-xs font-medium text-zinc-400">
+          <label className={`block text-xs font-medium ${THEME_COLORS.labelText}`}>
             Название
             <input
               type="text"
               value={cycleTitle}
               onChange={(e) => setCycleTitle(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100"
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText}`}
               placeholder={isScheduledProgram ? 'Название программы' : 'Название цикла'}
               autoComplete="off"
             />
@@ -217,7 +251,7 @@ export default function EditCycleModal({
 
           {!isScheduledProgram ? (
             <>
-              <label className="block text-xs font-medium text-zinc-400">
+              <label className={`block text-xs font-medium ${THEME_COLORS.labelText}`}>
                 Мышечная группа
                 <select
                   value={muscleGroupId}
@@ -225,7 +259,7 @@ export default function EditCycleModal({
                     setMuscleGroupId(e.target.value)
                     setExerciseId('')
                   }}
-                  className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100"
+                  className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText}`}
                 >
                   <option value="">Выберите…</option>
                   {(muscleGroups ?? []).map((g) => (
@@ -235,13 +269,13 @@ export default function EditCycleModal({
                   ))}
                 </select>
               </label>
-              <label className="block text-xs font-medium text-zinc-400">
+              <label className={`block text-xs font-medium ${THEME_COLORS.labelText}`}>
                 Упражнение
                 <select
                   value={exerciseId}
                   onChange={(e) => setExerciseId(e.target.value)}
                   disabled={!mgNum}
-                  className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 disabled:opacity-50"
+                  className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} ${THEME_COLORS.inputDisabled}`}
                 >
                   <option value="">
                     {mgNum ? 'Выберите…' : 'Сначала группа'}
@@ -254,13 +288,42 @@ export default function EditCycleModal({
                 </select>
               </label>
             </>
-          ) : null}
+          ) : (
+            <div className="rounded-xl border border-zinc-800/70 bg-zinc-950/30 p-3">
+              <div className={`text-xs font-medium ${THEME_COLORS.labelText}`}>
+                Дни недели программы
+              </div>
+              <p className={`mt-1 text-[11px] ${THEME_COLORS.dateTextSecondary}`}>
+                Все тренировки программы будут заново распределены по выбранным дням.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {WEEKDAYS.map(({ dow, label }) => (
+                  <label
+                    key={dow}
+                    className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${
+                      weekdays.has(dow)
+                        ? `${THEME_COLORS.accentBg} border-transparent text-white`
+                        : `border-zinc-700 bg-zinc-900 ${THEME_COLORS.buttonGhostText}`
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={weekdays.has(dow)}
+                      onChange={() => toggleWeekday(dow)}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="min-w-[6rem] flex-1 rounded-xl border border-zinc-700 py-2.5 text-sm font-semibold text-zinc-200"
+              className={`min-w-[6rem] flex-1 rounded-xl border ${THEME_COLORS.buttonGhostBorder} py-2.5 text-sm font-semibold ${THEME_COLORS.buttonGhostText}`}
             >
               Отмена
             </button>
@@ -272,7 +335,7 @@ export default function EditCycleModal({
                 muscleGroups === undefined ||
                 (isScheduledProgram ? false : allExercises === undefined)
               }
-              className="min-w-[6rem] flex-1 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-zinc-950 disabled:opacity-50"
+              className={`min-w-[6rem] flex-1 rounded-xl ${THEME_COLORS.accentBg} py-2.5 text-sm font-semibold ${THEME_COLORS.buttonPrimaryText} disabled:opacity-50 ${THEME_COLORS.accentBgHover}`}
             >
               {submitting ? 'Сохранение…' : 'Сохранить'}
             </button>
@@ -280,8 +343,8 @@ export default function EditCycleModal({
         </form>
 
         {onDuplicate || onDelete ? (
-          <div className="mt-6 border-t border-zinc-800 pt-4">
-            <p className="mb-2 text-xs font-medium text-zinc-500">
+          <div className={`mt-6 border-t ${THEME_COLORS.modalSectionBorder} pt-4`}>
+            <p className={`mb-2 text-xs font-medium ${THEME_COLORS.dateTextSecondary}`}>
               Дополнительно
             </p>
             <div className="flex flex-wrap gap-2">
@@ -290,7 +353,7 @@ export default function EditCycleModal({
                   type="button"
                   disabled={busyAction !== ''}
                   onClick={() => void handleDuplicate()}
-                  className="rounded-xl border border-zinc-600/80 bg-zinc-900/50 px-3 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/80 disabled:opacity-50"
+                  className={`rounded-xl border ${THEME_COLORS.buttonGhostBorder} ${THEME_COLORS.buttonGhostBg} px-3 py-2 text-sm font-medium ${THEME_COLORS.buttonGhostText} ${THEME_COLORS.buttonGhostHover} disabled:opacity-50`}
                 >
                   {busyAction === 'dup' ? 'Копирование…' : 'Дублировать'}
                 </button>
@@ -300,7 +363,7 @@ export default function EditCycleModal({
                   type="button"
                   disabled={busyAction !== ''}
                   onClick={() => void handleDelete()}
-                  className="rounded-xl border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-200 hover:bg-red-950/70 disabled:opacity-50"
+                  className={`rounded-xl border ${THEME_COLORS.dangerBorder} ${THEME_COLORS.dangerBg} px-3 py-2 text-sm font-medium ${THEME_COLORS.dangerText} ${THEME_COLORS.dangerHover} disabled:opacity-50`}
                 >
                   {busyAction === 'del' ? 'Удаление…' : 'Удалить'}
                 </button>

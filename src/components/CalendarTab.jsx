@@ -223,6 +223,8 @@ export default function CalendarTab() {
                       isOtherMonth={cell.isOtherMonth}
                       hasPending={hasTrainingForDay(key)}
                       onSelect={(d) => {
+                        // В режиме "Неделя" не перелистываем месяц кликом по крайним дням.
+                        if (cell.isOtherMonth) return
                         const k = getDateKey(d)
                         if (k) setSelectedDateKey(k)
                       }}

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import CalendarTab from './components/CalendarTab'
 import NavButton from './components/NavButton'
 import TrainingProgramsTab from './components/TrainingProgramsTab'
+import StatisticsTab from './components/StatisticsTab'
 import TodayTab from './components/TodayTab'
 import iconToday from './assets/today.svg'
 import iconCallendary from './assets/callendary_v2.svg'
 import iconPrograms from './assets/trainingPrograms.svg'
+import iconStatistics from './assets/statistics.svg'
 import { THEME_COLORS, THEME_LAYOUT } from './theme'
 import './App.css'
 
@@ -53,6 +55,9 @@ function App() {
         {activeTab === 'trainingPrograms' && (
           <h1 className={`text-left ${THEME_LAYOUT.headerTitle}`}>Программы</h1>
         )}
+        {activeTab === 'statistics' && (
+          <h1 className={`text-left ${THEME_LAYOUT.headerTitle}`}>Статистика</h1>
+        )}
       </header>
 
       <main
@@ -71,6 +76,7 @@ function App() {
             onRemoveCycle={handleRemoveProgramCycle}
           />
         )}
+        {activeTab === 'statistics' && <StatisticsTab />}
       </main>
 
       <footer
@@ -94,6 +100,12 @@ function App() {
             label="Программы"
             isActive={activeTab === 'trainingPrograms'}
             onClick={() => setActiveTab('trainingPrograms')}
+          />
+          <NavButton
+            icon={iconStatistics}
+            label="Статистика"
+            isActive={activeTab === 'statistics'}
+            onClick={() => setActiveTab('statistics')}
           />
         </nav>
       </footer>

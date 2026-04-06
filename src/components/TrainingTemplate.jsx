@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react'
+import { THEME_COLORS } from '../theme'
 import { getExerciseIconSrc } from '../utils/exerciseIcons'
 import SetEditModal from './modal/SetEditModal'
 import SetRow from './SetRow'
@@ -8,8 +9,8 @@ function IconCheck({ selected }) {
     <span
       className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
-          ? 'border-green-500/60 bg-green-950/40 text-green-300'
-          : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
+          ? THEME_COLORS.statusDoneOn
+          : THEME_COLORS.statusDoneOff
       }`}
     >
       ✓
@@ -22,8 +23,8 @@ function IconCross({ selected }) {
     <span
       className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-base font-semibold transition lg:h-8 lg:w-8 lg:text-lg ${
         selected
-          ? 'border-red-500/60 bg-red-950/40 text-red-300'
-          : 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600'
+          ? THEME_COLORS.statusNotDoneOn
+          : THEME_COLORS.statusNotDoneOff
       }`}
     >
       ✕

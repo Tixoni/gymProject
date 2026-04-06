@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { workoutService } from '../../storage/workoutService'
+import { THEME_COLORS } from '../../theme'
 
 export default function AddPersonalMaximumModal({
   open,
@@ -72,53 +73,53 @@ export default function AddPersonalMaximumModal({
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center lg:p-6">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70"
+        className={`absolute inset-0 ${THEME_COLORS.modalBackdrop}`}
         aria-label="Закрыть"
         onClick={onClose}
       />
 
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/95 shadow-2xl lg:max-w-lg"
+        className={`relative w-full max-w-md overflow-hidden rounded-2xl border ${THEME_COLORS.modalBorder} ${THEME_COLORS.modalPanel} shadow-2xl lg:max-w-lg`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="pm-modal-title"
       >
-        <div className="border-b border-zinc-800 px-5 py-4 lg:px-6 lg:py-5">
-          <div className="text-[11px] font-semibold tracking-wide text-emerald-300/90 lg:text-xs">
+        <div className={`border-b ${THEME_COLORS.modalSectionBorder} px-5 py-4 lg:px-6 lg:py-5`}>
+          <div className={`text-[11px] font-semibold tracking-wide ${THEME_COLORS.successHintText} lg:text-xs`}>
             ЛИЧНЫЙ РЕКОРД (ПМ)
           </div>
           <h2
             id="pm-modal-title"
-            className="mt-2 text-lg font-semibold text-zinc-50 lg:text-xl"
+            className={`mt-2 text-lg font-semibold lg:text-xl ${THEME_COLORS.heading}`}
           >
             {exerciseTitle ?? 'Упражнение'}
           </h2>
-          <p className="mt-1 text-xs text-zinc-500 lg:text-sm">
-            Упражнение выбрано из формы цикла — укажите вес и повторения рекорда.
+          <p className={`mt-1 text-xs lg:text-sm ${THEME_COLORS.dateTextSecondary}`}>
+            Укажите вес и повторения рекорда. Дробные значения веса можно вводить через "," или ".".
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 lg:px-6 lg:py-5">
           {error ? (
-            <div className="mb-4 rounded-xl border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+            <div className={`mb-4 rounded-xl border ${THEME_COLORS.errorBorder} ${THEME_COLORS.errorBg} px-3 py-2 text-sm ${THEME_COLORS.errorText}`}>
               {error}
             </div>
           ) : null}
 
-          <label className="block text-xs font-medium text-zinc-400 lg:text-sm">
+          <label className={`block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
             Вес, кг
             <input
               type="text"
               inputMode="decimal"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} ${THEME_COLORS.inputPlaceholder} outline-none focus:ring-2 focus:ring-orange-500/30 lg:py-3`}
               placeholder="например 100"
               required
             />
           </label>
 
-          <label className="mt-3 block text-xs font-medium text-zinc-400 lg:mt-4 lg:text-sm">
+          <label className={`mt-3 block text-xs font-medium lg:mt-4 lg:text-sm ${THEME_COLORS.labelText}`}>
             Повторения
             <input
               type="number"
@@ -126,19 +127,19 @@ export default function AddPersonalMaximumModal({
               step={1}
               value={reps}
               onChange={(e) => setReps(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} outline-none focus:ring-2 focus:ring-orange-500/30 lg:py-3`}
               placeholder="1"
               required
             />
           </label>
 
-          <label className="mt-3 block text-xs font-medium text-zinc-400 lg:mt-4 lg:text-sm">
+          <label className={`mt-3 block text-xs font-medium lg:mt-4 lg:text-sm ${THEME_COLORS.labelText}`}>
             Комментарий (необязательно)
             <input
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} outline-none focus:ring-2 focus:ring-orange-500/30 lg:py-3`}
             />
           </label>
 
@@ -146,18 +147,14 @@ export default function AddPersonalMaximumModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900/25 lg:rounded-2xl lg:py-4 lg:text-base"
+              className={`rounded-xl border ${THEME_COLORS.buttonGhostBorder} ${THEME_COLORS.buttonGhostBg} px-4 py-3 text-sm font-semibold ${THEME_COLORS.buttonGhostText} transition ${THEME_COLORS.buttonGhostHover} lg:rounded-2xl lg:py-4 lg:text-base`}
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-zinc-950 transition enabled:hover:opacity-95 disabled:opacity-50 lg:rounded-2xl lg:py-4 lg:text-base"
-              style={{
-                background:
-                  'linear-gradient(90deg, rgba(16,185,129,0.95), rgba(249,115,22,0.9))',
-              }}
+              className={`rounded-xl ${THEME_COLORS.accentBg} px-4 py-3 text-sm font-semibold ${THEME_COLORS.buttonPrimaryText} transition enabled:hover:opacity-95 disabled:opacity-50 ${THEME_COLORS.accentBgHover} lg:rounded-2xl lg:py-4 lg:text-base`}
             >
               {saving ? 'Сохранение…' : 'Сохранить'}
             </button>
