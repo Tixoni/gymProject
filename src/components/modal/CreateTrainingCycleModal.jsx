@@ -142,6 +142,10 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
     setWorkouts((prev) => [...prev, emptyWorkout()])
   }, [])
 
+  const removeWorkout = useCallback((id) => {
+    setWorkouts((prev) => prev.filter((w) => w.id !== id))
+  }, [])
+
   const exercisesForGroup = useCallback(
     (muscleGroupId) => {
       const mg = Number(muscleGroupId)
@@ -285,6 +289,9 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
         ],
       })
     }
+    const removeSetRow = (setId) => {
+      updateWorkout(w.id, { sets: w.sets.filter((s) => s.id !== setId) })
+    }
 
     return (
       <div
@@ -293,6 +300,16 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
       >
         <div className="text-xs font-semibold uppercase tracking-wide text-orange-300/90">
           Тренировка {index + 1} (нагрузка / подходы)
+        </div>
+        <div className="mt-1">
+          <button
+            type="button"
+            onClick={() => removeWorkout(w.id)}
+            disabled={workouts.length <= 1}
+            className="rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-[11px] text-red-200 disabled:opacity-40"
+          >
+            Удалить тренировку
+          </button>
         </div>
 
         <div className="mt-4 border-t border-zinc-800 pt-3">
@@ -429,8 +446,15 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                     key={s.id}
                     className="rounded-lg border border-zinc-800 bg-zinc-950/30 p-2"
                   >
-                    <div className="text-[11px] text-zinc-500">
-                      Подход {si + 1}
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-500">
+                      <span>Подход {si + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSetRow(s.id)}
+                        className="rounded border border-red-900/60 bg-red-950/30 px-1.5 py-0.5 text-[10px] text-red-200"
+                      >
+                        Удалить
+                      </button>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <label className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-200">
@@ -518,7 +542,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                 <button
                   type="button"
                   onClick={addSetRow}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-500/50 bg-emerald-950/30 text-xl font-light text-emerald-300 transition hover:border-emerald-400/70"
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-orange-500/50 bg-zinc-900 text-xl font-light text-orange-300 transition hover:border-orange-400/70"
                   aria-label="Добавить подход"
                 >
                   +
@@ -557,7 +581,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
           aria-labelledby="cycle-modal-title"
         >
           <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/95 px-5 py-4 lg:px-6 lg:py-5">
-            <div className="text-[11px] font-semibold tracking-wide text-emerald-300/90 lg:text-xs">
+            <div className="text-[11px] font-semibold tracking-wide text-orange-300/90 lg:text-xs">
               НОВЫЙ ТРЕНИРОВОЧНЫЙ ЦИКЛ
             </div>
             <h2
@@ -595,7 +619,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                 type="text"
                 value={cycleTitle}
                 onChange={(e) => setCycleTitle(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-orange-500/30 focus:ring-2 lg:py-3"
                 placeholder="Например, сплит сила"
                 required
               />
@@ -614,7 +638,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                   setCycleMuscleGroupId(e.target.value)
                   setCycleExerciseId('')
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-orange-500/30 focus:ring-2 lg:py-3"
               >
                 <option value="">Выберите…</option>
                 {(muscleGroups ?? []).map((g) => (
@@ -631,7 +655,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                 value={cycleExerciseId}
                 onChange={(e) => setCycleExerciseId(e.target.value)}
                 disabled={!Number(cycleMuscleGroupId)}
-                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 enabled:cursor-pointer disabled:opacity-50 lg:py-3"
+                className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-orange-500/30 focus:ring-2 enabled:cursor-pointer disabled:opacity-50 lg:py-3"
               >
                 <option value="">
                   {Number(cycleMuscleGroupId) ? 'Выберите…' : 'Сначала группа'}
@@ -655,7 +679,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
               <button
                 type="button"
                 onClick={addWorkout}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-500/50 bg-emerald-950/30 text-2xl font-light text-emerald-300 transition hover:border-emerald-400/70 hover:bg-emerald-950/50"
+                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-orange-500/50 bg-zinc-900 text-2xl font-light text-orange-300 transition hover:border-orange-400/70"
                 aria-label="Добавить тренировку"
               >
                 +
@@ -676,11 +700,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
               <button
                 type="submit"
                 disabled={submitting || muscleGroups === undefined}
-                className="rounded-xl px-4 py-3 text-sm font-semibold text-zinc-950 transition enabled:hover:opacity-95 disabled:opacity-50 lg:rounded-2xl lg:py-4 lg:text-base"
-                style={{
-                  background:
-                    'linear-gradient(90deg, rgba(16,185,129,0.95), rgba(249,115,22,0.9))',
-                }}
+                className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-orange-600 enabled:hover:opacity-95 disabled:opacity-50 lg:rounded-2xl lg:py-4 lg:text-base"
               >
                 {submitting ? 'Сохранение…' : 'Создать'}
               </button>

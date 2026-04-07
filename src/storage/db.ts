@@ -171,56 +171,58 @@ class WorkoutAppDB extends Dexie {
         { muscleGroupId: 11, title: 'Предплечья' },
       ]),
         transaction.table('exercisesTable').bulkAdd([
-        { exerciseId: 1, title: 'Жим штанги лежа', muscleGroupId: 1 },
-        { exerciseId: 2, title: 'Жим гантелей лежа', muscleGroupId: 1 },
-        { exerciseId: 3, title: 'Баттерфляй', muscleGroupId: 1 },
-        { exerciseId: 4, title: 'Отжимания на брусьях', muscleGroupId: 1 },
-
-        { exerciseId: 5, title: 'Тяга верхнего блока', muscleGroupId: 2 },
-        { exerciseId: 6, title: 'Горизонтальная тяга', muscleGroupId: 2 },
-        { exerciseId: 7, title: 'Подтягивания', muscleGroupId: 2 },
-        { exerciseId: 8, title: 'Тяга гантели одной рукой', muscleGroupId: 2 },
-
-        { exerciseId: 9, title: 'Шраги со штангой', muscleGroupId: 3 },
-        { exerciseId: 10, title: 'Шраги с гантелями', muscleGroupId: 3 },
-
-        { exerciseId: 11, title: 'Жим штанги стоя', muscleGroupId: 4 },
-        { exerciseId: 12, title: 'Разведение гантелей в стороны', muscleGroupId: 4 },
-        { exerciseId: 13, title: 'Жим гантелей сидя', muscleGroupId: 4 },
-        { exerciseId: 14, title: 'Жим гири', muscleGroupId: 4 },
-
-        { exerciseId: 15, title: 'Подъем штанги на бицепс', muscleGroupId: 5 },
-        { exerciseId: 16, title: 'Подъем гантелей на бицепс', muscleGroupId: 5 },
-        { exerciseId: 17, title: 'Молотки с гантелями', muscleGroupId: 5 },
-        { exerciseId: 18, title: 'Подъем на бицепс обратным прямым хватом', muscleGroupId: 5 },
-
-        { exerciseId: 19, title: 'Французский жим', muscleGroupId: 6 },
-        { exerciseId: 20, title: 'Разгибание рук в кроссовере', muscleGroupId: 6 },
-        { exerciseId: 21, title: 'Жим узким хватом', muscleGroupId: 6 },
-        { exerciseId: 22, title: 'Разгибание рук с гантелью из-за головы', muscleGroupId: 6 },
-
-        { exerciseId: 23, title: 'Приседания со штангой', muscleGroupId: 7 },
-        { exerciseId: 24, title: 'Жим ногами', muscleGroupId: 7 },
-        { exerciseId: 25, title: 'Выпады с гантелями', muscleGroupId: 7 },
-        { exerciseId: 26, title: 'Разгибание ног в тренажере', muscleGroupId: 7 },
-
-        { exerciseId: 27, title: 'Сгибание ног в тренажере', muscleGroupId: 8 },
-        { exerciseId: 28, title: 'Румынская тяга', muscleGroupId: 8 },
-        { exerciseId: 29, title: 'Мертвая тяга', muscleGroupId: 8 },
-
-        { exerciseId: 30, title: 'Подъем на носки стоя', muscleGroupId: 9 },
-        { exerciseId: 31, title: 'Подъем на носки сидя', muscleGroupId: 9 },
-        { exerciseId: 32, title: 'Подъем на носки в тренажере', muscleGroupId: 9 },
-
-        { exerciseId: 33, title: 'Скручивания', muscleGroupId: 10 },
-        { exerciseId: 34, title: 'Подъем ног в висе', muscleGroupId: 10 },
-        { exerciseId: 35, title: 'Планка', muscleGroupId: 10 },
-        { exerciseId: 36, title: 'Хвот дракона', muscleGroupId: 10 },
-
-        { exerciseId: 37, title: 'Подъём на луч штанги', muscleGroupId: 11 },
-        { exerciseId: 38, title: 'Подъём на луч одной рукой', muscleGroupId: 11 },
-        { exerciseId: 39, title: 'Кистевой эспандер', muscleGroupId: 11 },
-        { exerciseId: 40, title: 'Вис на турнике с fatgrips', muscleGroupId: 11 },
+          { exerciseId: 1, title: 'Жим штанги лежа', muscleGroupId: 1 },
+          { exerciseId: 2, title: 'Жим штанги в наклоне', muscleGroupId: 1 },
+          { exerciseId: 3, title: 'Жим гантелей', muscleGroupId: 1 },
+          { exerciseId: 4, title: 'Отжимания на брусьях', muscleGroupId: 1 },
+          { exerciseId: 5, title: 'Баттерфляй', muscleGroupId: 1 },
+        
+          { exerciseId: 6, title: 'Тяга верхнего блока', muscleGroupId: 2 },
+          { exerciseId: 7, title: 'Горизонтальная тяга блока', muscleGroupId: 2 },
+          { exerciseId: 8, title: 'Подтягивания', muscleGroupId: 2 },
+          { exerciseId: 9, title: 'Тяга гантели одной рукой', muscleGroupId: 2 },
+          { exerciseId: 10, title: 'Тяга Ятса', muscleGroupId: 2 },
+        
+          { exerciseId: 11, title: 'Шраги со штангой', muscleGroupId: 3 },
+          { exerciseId: 12, title: 'Шраги с гантелями', muscleGroupId: 3 },
+        
+          { exerciseId: 13, title: 'Жим штанги стоя', muscleGroupId: 4 },
+          { exerciseId: 14, title: 'Разведение гантелей в стороны', muscleGroupId: 4 },
+          { exerciseId: 15, title: 'Жим гантелей сидя', muscleGroupId: 4 },
+          { exerciseId: 16, title: 'Жим гири', muscleGroupId: 4 },
+        
+          { exerciseId: 17, title: 'Подъем штанги на бицепс', muscleGroupId: 5 },
+          { exerciseId: 18, title: 'Подъем гантелей на бицепс', muscleGroupId: 5 },
+          { exerciseId: 19, title: 'Молотки с гантелями', muscleGroupId: 5 },
+          { exerciseId: 20, title: 'Подъем на бицепс прямым хватом', muscleGroupId: 5 },
+        
+          { exerciseId: 21, title: 'Французский жим', muscleGroupId: 6 },
+          { exerciseId: 22, title: 'Разгибание рук в кроссовере', muscleGroupId: 6 },
+          { exerciseId: 23, title: 'Жим лежа узким хватом', muscleGroupId: 6 },
+          { exerciseId: 24, title: 'Разгибание рук с гантелью за головой', muscleGroupId: 6 },
+        
+          { exerciseId: 25, title: 'Приседания со штангой', muscleGroupId: 7 },
+          { exerciseId: 26, title: 'Жим ногами', muscleGroupId: 7 },
+          { exerciseId: 27, title: 'Выпады с гантелями', muscleGroupId: 7 },
+          { exerciseId: 28, title: 'Разгибание ног в тренажере', muscleGroupId: 7 },
+        
+          { exerciseId: 29, title: 'Сгибание ног в тренажере', muscleGroupId: 8 },
+          { exerciseId: 30, title: 'Румынская тяга', muscleGroupId: 8 },
+          { exerciseId: 31, title: 'Мертвая тяга', muscleGroupId: 8 },
+        
+          { exerciseId: 32, title: 'Подъем на носки стоя', muscleGroupId: 9 },
+          { exerciseId: 33, title: 'Подъем на носки сидя', muscleGroupId: 9 },
+          { exerciseId: 34, title: 'Подъем на носки в тренажере', muscleGroupId: 9 },
+        
+          { exerciseId: 35, title: 'Скручивания', muscleGroupId: 10 },
+          { exerciseId: 36, title: 'Подъем ног в висе', muscleGroupId: 10 },
+          { exerciseId: 37, title: 'Планка', muscleGroupId: 10 },
+          { exerciseId: 38, title: 'Хвост дракона', muscleGroupId: 10 },
+        
+          { exerciseId: 39, title: 'Подъём на луч штанги', muscleGroupId: 11 },
+          { exerciseId: 40, title: 'Подъём на луч одной рукой', muscleGroupId: 11 },
+          { exerciseId: 41, title: 'Кистевой эспандер', muscleGroupId: 11 },
+          { exerciseId: 42, title: 'Вис на турнике с fatgrips', muscleGroupId: 11 },
         ]),
       ])
       /* Демо-цикл не в populate: таблица шаблонов подключается в v3+, в транзакции

@@ -94,21 +94,21 @@ export default function TrainingProgramsTab({
         <button
           type="button"
           onClick={() => setCycleModalOpen(true)}
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} text-emerald-200`}
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
           Новый цикл (форма + локальное хранилище)
         </button>
         <button
           type="button"
           onClick={() => setComposeModalOpen(true)}
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.accentBg} ${THEME_COLORS.accentBgHover} text-white`}
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
           Составить программу
         </button>
         <button
           type="button"
           onClick={onSeed}
-          className={`rounded-xl px-4 py-3 text-sm font-semibold text-white lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.accentBg} ${THEME_COLORS.accentBgHover}`}
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
           Добавить шаблоны (грудь, бицепс, спина, ноги)
         </button>

@@ -63,11 +63,7 @@ export default function CycleTemplate({
             {expanded ? '▼' : '▶'}
           </button>
           {canEditCycle ? (
-            <button
-              type="button"
-              onClick={() => onOpenCycleEditor(cycle)}
-              className="min-w-0 flex-1 rounded-lg border border-transparent px-1 py-0.5 text-left transition hover:border-zinc-700/80 hover:bg-zinc-900/40"
-            >
+            <div className="min-w-0 flex-1 rounded-lg border border-transparent px-1 py-0.5 text-left">
               <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
                 {kindLabel}
               </div>
@@ -80,7 +76,7 @@ export default function CycleTemplate({
                   <span className="text-zinc-600"> · {blockCount} блок(ов)</span>
                 ) : null}
               </div>
-            </button>
+            </div>
           ) : (
             <div className="min-w-0 flex-1">
               <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
@@ -99,8 +95,17 @@ export default function CycleTemplate({
           )}
         </div>
 
-        {onRemove ? (
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {canEditCycle ? (
+            <button
+              type="button"
+              onClick={() => onOpenCycleEditor(cycle)}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+            >
+              Редактировать
+            </button>
+          ) : null}
+          {onRemove ? (
             <button
               type="button"
               onClick={() => onRemove(cycle)}
@@ -108,8 +113,8 @@ export default function CycleTemplate({
             >
               Удалить
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       {expanded ? (
@@ -129,11 +134,8 @@ export default function CycleTemplate({
                     className="rounded-lg border border-zinc-800/60 bg-zinc-950/20 p-2"
                   >
                     {canEditTraining ? (
-                      <button
-                        type="button"
-                        onClick={() => openTraining(s)}
-                        className="mb-2 w-full rounded-lg border border-transparent px-1 py-1 text-left transition hover:border-zinc-700/80 hover:bg-zinc-900/35"
-                      >
+                      <div className="mb-2 flex items-start justify-between gap-2 px-1 py-1">
+                        <div className="min-w-0">
                         <div
                           className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}
                         >
@@ -142,7 +144,15 @@ export default function CycleTemplate({
                         <div className="text-sm font-semibold text-zinc-100">
                           {trainingTitle}
                         </div>
-                      </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openTraining(s)}
+                          className="shrink-0 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-200 hover:bg-zinc-800"
+                        >
+                          Изменить
+                        </button>
+                      </div>
                     ) : (
                       <div className="mb-2 px-1 py-1">
                         <div

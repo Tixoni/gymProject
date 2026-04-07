@@ -27,6 +27,7 @@ export default function EditCycleModal({
   const [muscleGroupId, setMuscleGroupId] = useState('')
   const [exerciseId, setExerciseId] = useState('')
   const [weekdays, setWeekdays] = useState(() => new Set())
+  const [cycleTrainings, setCycleTrainings] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -43,6 +44,15 @@ export default function EditCycleModal({
     },
     [allExercises],
   )
+
+  const refreshCycleTrainings = useCallback(async () => {
+    if (cycleId == null || isScheduledProgram) {
+      setCycleTrainings([])
+      return
+    }
+    const rows = await workoutService.listCycleTrainingTemplates(cycleId)
+    setCycleTrainings(rows)
+  }, [cycleId, isScheduledProgram])
 
   useEffect(() => {
     if (!open || cycleId == null) return
@@ -81,6 +91,7 @@ export default function EditCycleModal({
           .map((t) => Number(t.dayOfTheWeek))
           .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7)
         setWeekdays(new Set(dows))
+        await refreshCycleTrainings()
       } catch (e) {
         if (!cancelled) setError('Не удалось загрузить цикл.')
         console.error(e)
@@ -91,7 +102,7 @@ export default function EditCycleModal({
     return () => {
       cancelled = true
     }
-  }, [open, cycleId])
+  }, [open, cycleId, refreshCycleTrainings])
 
   useEffect(() => {
     if (!open) return
@@ -173,6 +184,34 @@ export default function EditCycleModal({
     } catch (err) {
       console.error(err)
       setError('Не удалось дублировать.')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  const handleAddTraining = async () => {
+    if (cycleId == null) return
+    setBusyAction('add-training')
+    setError('')
+    try {
+      await workoutService.addTrainingToCycle(cycleId)
+      await refreshCycleTrainings()
+    } catch (err) {
+      setError(err?.message ?? 'Не удалось добавить тренировку.')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  const handleDeleteTraining = async (templateId) => {
+    if (!window.confirm('Удалить выбранную тренировку?')) return
+    setBusyAction(`del-training-${templateId}`)
+    setError('')
+    try {
+      await workoutService.deleteTrainingByTemplate(templateId)
+      await refreshCycleTrainings()
+    } catch (err) {
+      setError(err?.message ?? 'Не удалось удалить тренировку.')
     } finally {
       setBusyAction('')
     }
@@ -318,6 +357,48 @@ export default function EditCycleModal({
               </div>
             </div>
           )}
+
+          {!isScheduledProgram ? (
+            <div className="rounded-xl border border-zinc-800/70 bg-zinc-950/30 p-3">
+              <div className={`text-xs font-medium ${THEME_COLORS.labelText}`}>
+                Тренировки цикла
+              </div>
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void handleAddTraining()}
+                  disabled={busyAction !== ''}
+                  className="rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-200 disabled:opacity-50"
+                >
+                  Добавить тренировку
+                </button>
+              </div>
+              <ul className="mt-2 list-none space-y-2 p-0">
+                {cycleTrainings.map((t) => (
+                  <li
+                    key={t.templateId}
+                    className="flex items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-900/30 px-2 py-1.5"
+                  >
+                    <span className="text-xs text-zinc-300">
+                      {t.title}
+                      {t.dayOfTheWeek ? ` · день ${t.dayOfTheWeek}` : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteTraining(t.templateId)}
+                      disabled={busyAction !== ''}
+                      className="rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-[11px] text-red-200 disabled:opacity-50"
+                    >
+                      Удалить
+                    </button>
+                  </li>
+                ))}
+                {!cycleTrainings.length ? (
+                  <li className="text-xs text-zinc-500">Тренировок пока нет.</li>
+                ) : null}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap gap-2 pt-2">
             <button

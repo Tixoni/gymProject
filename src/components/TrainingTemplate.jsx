@@ -234,8 +234,7 @@ export default function TrainingTemplate({
               className="h-full rounded-full"
               style={{
                 width: `${progress.percent}%`,
-                background:
-                  'linear-gradient(90deg, rgba(16,185,129,0.9), rgba(249,115,22,0.85))',
+                background: 'rgba(249,115,22,0.85)',
               }}
             />
           </div>

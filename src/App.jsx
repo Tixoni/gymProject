@@ -3,11 +3,13 @@ import CalendarTab from './components/CalendarTab'
 import NavButton from './components/NavButton'
 import TrainingProgramsTab from './components/TrainingProgramsTab'
 import StatisticsTab from './components/StatisticsTab'
+import SettingsTab, { getResolvedThemeVars } from './components/SettingsTab'
 import TodayTab from './components/TodayTab'
 import iconToday from './assets/today.svg'
 import iconCallendary from './assets/callendary_v2.svg'
 import iconPrograms from './assets/trainingPrograms.svg'
 import iconStatistics from './assets/statistics.svg'
+import iconSettings from './assets/vite.svg'
 import { THEME_COLORS, THEME_LAYOUT } from './theme'
 import './App.css'
 
@@ -38,9 +40,11 @@ function App() {
     if (!id) return
     setProgramCycles((prev) => (prev ?? []).filter((c) => c?.id !== id))
   }
+  const themeVars = getResolvedThemeVars()
 
   return (
     <div
+      style={themeVars}
       className={`flex min-h-dvh min-h-full flex-1 flex-col ${THEME_LAYOUT.maxContentWidth} ${THEME_COLORS.appBackground}`}
     >
       <header
@@ -57,6 +61,9 @@ function App() {
         )}
         {activeTab === 'statistics' && (
           <h1 className={`text-left ${THEME_LAYOUT.headerTitle}`}>Статистика</h1>
+        )}
+        {activeTab === 'settings' && (
+          <h1 className={`text-left ${THEME_LAYOUT.headerTitle}`}>Настройки</h1>
         )}
       </header>
 
@@ -77,6 +84,7 @@ function App() {
           />
         )}
         {activeTab === 'statistics' && <StatisticsTab />}
+        {activeTab === 'settings' && <SettingsTab />}
       </main>
 
       <footer
@@ -106,6 +114,12 @@ function App() {
             label="Статистика"
             isActive={activeTab === 'statistics'}
             onClick={() => setActiveTab('statistics')}
+          />
+          <NavButton
+            icon={iconSettings}
+            label="Настройки"
+            isActive={activeTab === 'settings'}
+            onClick={() => setActiveTab('settings')}
           />
         </nav>
       </footer>

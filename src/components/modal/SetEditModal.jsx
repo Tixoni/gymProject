@@ -6,7 +6,7 @@ function OptionCard({ active, title, subtitle, tone, icon, onClick }) {
     switch (tone) {
       case 'green':
         return active
-          ? 'border-green-500/50 bg-green-500/70 text-zinc-950'
+          ? 'border-orange-500/50 bg-orange-500/70 text-zinc-950'
           : 'border-zinc-800 bg-zinc-950/20 text-zinc-200 hover:bg-zinc-900/25'
       case 'red':
         return active
@@ -111,7 +111,7 @@ export default function SetEditModal({
 
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/95 shadow-2xl lg:max-w-lg xl:max-w-xl">
         <div className="border-b border-zinc-800 px-5 py-4 lg:px-6 lg:py-5">
-          <div className="text-[11px] font-semibold tracking-wide text-emerald-300/90 lg:text-xs">
+          <div className="text-[11px] font-semibold tracking-wide text-orange-300/90 lg:text-xs">
             РЕДАКТИРОВАНИЕ ПОДХОДА
           </div>
           <div className="mt-2 text-lg font-semibold text-zinc-50 lg:text-xl">
@@ -213,11 +213,7 @@ export default function SetEditModal({
                   actualReps: status === 'partial' ? partialReps : undefined,
                 })
               }
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-zinc-950 transition lg:rounded-2xl lg:px-5 lg:py-4 lg:text-base"
-              style={{
-                background:
-                  'linear-gradient(90deg, rgba(16,185,129,0.95), rgba(249,115,22,0.9))',
-              }}
+              className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-orange-600 lg:rounded-2xl lg:px-5 lg:py-4 lg:text-base"
             >
               Сохранить
             </button>

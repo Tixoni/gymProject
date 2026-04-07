@@ -849,6 +849,103 @@ export const workoutService = {
     )
   },
 
+  async listCycleTrainingTemplates(cycleId: number) {
+    const trainings = await db.trainingsTable.where('cycleId').equals(cycleId).toArray()
+    trainings.sort(
+      (a, b) =>
+        (a.dayOfTheWeek ?? 0) - (b.dayOfTheWeek ?? 0) ||
+        (a.trainingId ?? 0) - (b.trainingId ?? 0),
+    )
+    const out: Array<{
+      trainingId: number
+      templateId: number
+      title: string
+      dayOfTheWeek: number | undefined
+    }> = []
+    for (const t of trainings) {
+      const tid = t.trainingId
+      if (tid == null) continue
+      const tmpl = await db.workoutTemplatesTable.where('trainingId').equals(tid).first()
+      if (!tmpl?.templateId) continue
+      out.push({
+        trainingId: tid,
+        templateId: tmpl.templateId,
+        title: tmpl.title ?? `Тренировка #${tid}`,
+        dayOfTheWeek: t.dayOfTheWeek,
+      })
+    }
+    return out
+  },
+
+  async addTrainingToCycle(cycleId: number) {
+    const cycle = await db.trainingCyclesTable.get(cycleId)
+    if (!cycle) throw new Error('NOT_FOUND')
+    if (cycle.cycleKind === SCHEDULED_PROGRAM_CYCLE_KIND) {
+      throw new Error('PROGRAM_CYCLE')
+    }
+    const trainings = await db.trainingsTable.where('cycleId').equals(cycleId).toArray()
+    trainings.sort((a, b) => (a.trainingId ?? 0) - (b.trainingId ?? 0))
+    const baseTraining = trainings[trainings.length - 1]
+    if (!baseTraining?.trainingId) throw new Error('NO_BASE_TRAINING')
+    const baseTemplate = await db.workoutTemplatesTable
+      .where('trainingId')
+      .equals(baseTraining.trainingId)
+      .first()
+    if (!baseTemplate) throw new Error('NO_BASE_TEMPLATE')
+    const baseSets = await db.setsTable.where('trainingId').equals(baseTraining.trainingId).toArray()
+    baseSets.sort((a, b) => (a.setNumber ?? 0) - (b.setNumber ?? 0))
+
+    await db.transaction(
+      'rw',
+      [db.trainingsTable, db.workoutTemplatesTable, db.setsTable],
+      async () => {
+        const newDow = Math.min(7, Math.max(1, Number(baseTraining.dayOfTheWeek ?? 1) + 1))
+        const newTid = await db.trainingsTable.add({
+          status: 'planned',
+          cycleId,
+          dayOfTheWeek: newDow,
+          plannedDate: '',
+        })
+        const createdAt = new Date().toISOString()
+        await db.workoutTemplatesTable.add({
+          title: `${baseTemplate.title} (новая)`,
+          muscleGroupId: baseTemplate.muscleGroupId,
+          exerciseId: baseTemplate.exerciseId,
+          setsJson: baseTemplate.setsJson,
+          createdAt,
+          cycleId,
+          trainingId: newTid,
+        })
+        for (const s of baseSets) {
+          await db.setsTable.add({
+            trainingId: newTid,
+            exerciseId: s.exerciseId,
+            setNumber: s.setNumber,
+            weight: s.weight,
+            reps: s.reps,
+            percentageOfPM: s.percentageOfPM,
+            status: 'not_completed',
+          })
+        }
+      },
+    )
+  },
+
+  async deleteTrainingByTemplate(templateId: number) {
+    const tmpl = await db.workoutTemplatesTable.get(templateId)
+    if (!tmpl?.trainingId) throw new Error('NOT_FOUND')
+    const tid = tmpl.trainingId
+    await db.transaction(
+      'rw',
+      [db.setsTable, db.trainingsTable, db.workoutTemplatesTable],
+      async () => {
+        await db.setsTable.where('trainingId').equals(tid).delete()
+        await db.workoutTemplatesTable.where('trainingId').equals(tid).delete()
+        await db.trainingsTable.delete(tid)
+      },
+    )
+  },
+
   /** Шаблоны из IndexedDB с названиями группы и упражнения (для UI «Программы») */
   async listSavedWorkoutPrograms() {
     const [templates, muscleGroups, exercises] = await Promise.all([

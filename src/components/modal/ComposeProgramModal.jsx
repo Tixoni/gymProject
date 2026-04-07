@@ -163,7 +163,7 @@ export default function ComposeProgramModal({ open, onClose, onCreated }) {
         aria-labelledby="compose-program-title"
       >
         <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/95 px-5 py-4 lg:px-6 lg:py-5">
-          <div className="text-[11px] font-semibold tracking-wide text-emerald-300/90 lg:text-xs">
+          <div className="text-[11px] font-semibold tracking-wide text-orange-300/90 lg:text-xs">
             ПРОГРАММА
           </div>
           <h2
@@ -194,7 +194,7 @@ export default function ComposeProgramModal({ open, onClose, onCreated }) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-orange-500/30 focus:ring-2 lg:py-3"
               placeholder="Например, силовой мезоцикл"
               required
             />
@@ -206,7 +206,7 @@ export default function ComposeProgramModal({ open, onClose, onCreated }) {
               type="date"
               value={startDateKey}
               onChange={(e) => setStartDateKey(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-emerald-500/30 focus:ring-2 lg:py-3"
+              className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-zinc-100 outline-none ring-orange-500/30 focus:ring-2 lg:py-3"
               required
             />
             <span className="mt-1 block text-[11px] text-zinc-600">
@@ -258,7 +258,7 @@ export default function ComposeProgramModal({ open, onClose, onCreated }) {
                 type="button"
                 onClick={appendCycle}
                 disabled={!addCycleId}
-                className="rounded-xl border border-emerald-700/60 bg-emerald-950/40 px-4 py-2.5 text-sm font-semibold text-emerald-200 disabled:opacity-40"
+                className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-200 disabled:opacity-40 hover:bg-zinc-800"
               >
                 Добавить
               </button>
@@ -346,11 +346,7 @@ export default function ComposeProgramModal({ open, onClose, onCreated }) {
             <button
               type="submit"
               disabled={submitting || !ready}
-              className="rounded-xl px-4 py-3 text-sm font-semibold text-zinc-950 transition enabled:hover:opacity-95 disabled:opacity-50"
-              style={{
-                background:
-                  'linear-gradient(90deg, rgba(16,185,129,0.95), rgba(249,115,22,0.9))',
-              }}
+              className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-orange-600 enabled:hover:opacity-95 disabled:opacity-50"
             >
               {submitting ? 'Сохранение…' : 'Создать'}
             </button>

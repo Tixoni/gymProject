@@ -78,6 +78,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
   const [loading, setLoading] = useState(false)
   const [pmModalOpen, setPmModalOpen] = useState(false)
   const [pmContext, setPmContext] = useState(null)
+  const [deletingTraining, setDeletingTraining] = useState(false)
 
   const muscleGroups = useLiveQuery(() => db.muscleGroupsTable.toArray(), [])
   const allExercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
@@ -190,6 +191,10 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
     ])
   }
 
+  const removeSetRow = (id) => {
+    setSetRows((prev) => prev.filter((s) => s.id !== id))
+  }
+
   const openPmForExercise = (ex, title) => {
     if (!ex) return
     setPmContext({ exerciseId: ex, title })
@@ -255,6 +260,22 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
       setError(err?.message ?? 'Не удалось сохранить.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDeleteTraining = async () => {
+    if (templateId == null) return
+    if (!window.confirm('Удалить эту тренировку целиком?')) return
+    setDeletingTraining(true)
+    setError('')
+    try {
+      await workoutService.deleteTrainingByTemplate(templateId)
+      onSaved?.()
+      onClose?.()
+    } catch (err) {
+      setError(err?.message ?? 'Не удалось удалить тренировку.')
+    } finally {
+      setDeletingTraining(false)
     }
   }
 
@@ -377,8 +398,15 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
                     key={s.id}
                     className="rounded-lg border border-zinc-800 bg-zinc-950/30 p-2"
                   >
-                    <div className="text-[11px] text-zinc-500">
-                      Подход {si + 1}
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-500">
+                      <span>Подход {si + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSetRow(s.id)}
+                        className="rounded border border-red-900/60 bg-red-950/30 px-1.5 py-0.5 text-[10px] text-red-200"
+                      >
+                        Удалить
+                      </button>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <label className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-200">
@@ -482,6 +510,16 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
                 className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-50"
               >
                 {submitting ? 'Сохранение…' : 'Сохранить'}
+              </button>
+            </div>
+            <div className="mt-3 border-t border-zinc-800 pt-3">
+              <button
+                type="button"
+                onClick={() => void handleDeleteTraining()}
+                disabled={deletingTraining || loading || !!loadError}
+                className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 disabled:opacity-50"
+              >
+                {deletingTraining ? 'Удаление…' : 'Удалить тренировку'}
               </button>
             </div>
           </form>

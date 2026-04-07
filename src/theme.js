@@ -4,34 +4,34 @@
  */
 export const THEME_COLORS = {
   // Оболочка приложения
-  appBackground: 'bg-zinc-950',
+  appBackground: 'bg-[var(--app-bg)]',
 
   // Верхняя и нижняя панели (хром)
-  chrome: 'bg-black',
-  chromeText: 'text-zinc-50',
-  chromeBorder: 'border-zinc-800',
+  chrome: 'bg-[var(--chrome-bg)]',
+  chromeText: 'text-[var(--chrome-text)]',
+  chromeBorder: 'border-[var(--chrome-border)]',
 
   // Шапка
   headerShadow: 'shadow-lg',
 
   // Контент
-  contentText: 'text-zinc-200',
-  contentMuted: 'text-zinc-400',
-  heading: 'text-zinc-50',
+  contentText: 'text-[var(--content-text)]',
+  contentMuted: 'text-[var(--content-muted)]',
+  heading: 'text-[var(--heading-text)]',
 
   // Нижняя навигация — кнопки
-  navButtonActive: 'bg-zinc-900',
-  navButtonInactive: 'bg-zinc-800 opacity-70',
+  navButtonActive: 'bg-[var(--nav-active-bg)]',
+  navButtonInactive: 'bg-[var(--nav-inactive-bg)] opacity-70',
 
   // Списки / акценты (дальнейшие экраны)
-  sectionBackground: 'bg-zinc-900',
-  sectionItemBackground: 'bg-zinc-900',
-  accentBg: 'bg-orange-500',
-  accentBgHover: 'hover:bg-orange-600',
-  accentText: 'text-orange-500',
-  accentCheckbox: 'text-orange-500',
-  dateTextPrimary: 'text-zinc-400',
-  dateTextSecondary: 'text-zinc-500',
+  sectionBackground: 'bg-[var(--section-bg)]',
+  sectionItemBackground: 'bg-[var(--section-item-bg)]',
+  accentBg: 'bg-[var(--accent-bg)]',
+  accentBgHover: 'hover:bg-[var(--accent-bg-hover)]',
+  accentText: 'text-[var(--accent-text)]',
+  accentCheckbox: 'text-[var(--accent-text)]',
+  dateTextPrimary: 'text-[var(--date-text-primary)]',
+  dateTextSecondary: 'text-[var(--date-text-secondary)]',
 
   // Модальные окна и формы
   modalBackdrop: 'bg-black/70',
@@ -47,7 +47,7 @@ export const THEME_COLORS = {
   buttonGhostBg: 'bg-zinc-950/40',
   buttonGhostText: 'text-zinc-200',
   buttonGhostHover: 'hover:bg-zinc-900/25',
-  buttonPrimaryText: 'text-zinc-950',
+  buttonPrimaryText: 'text-[var(--button-primary-text)]',
   errorBg: 'bg-red-950/40',
   errorBorder: 'border-red-900/50',
   errorText: 'text-red-200',
@@ -55,7 +55,7 @@ export const THEME_COLORS = {
   dangerBg: 'bg-red-950/40',
   dangerText: 'text-red-200',
   dangerHover: 'hover:bg-red-950/70',
-  successHintText: 'text-emerald-300/90',
+  successHintText: 'text-[var(--accent-text)]',
 
   // Карточки статистики
   cardSubtleBg: 'bg-zinc-950/30',
