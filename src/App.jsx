@@ -9,7 +9,7 @@ import iconToday from './assets/today.svg'
 import iconCallendary from './assets/callendary_v2.svg'
 import iconPrograms from './assets/trainingPrograms.svg'
 import iconStatistics from './assets/statistics.svg'
-import iconSettings from './assets/vite.svg'
+import iconSettings from './assets/gear.svg'
 import { THEME_COLORS, THEME_LAYOUT } from './theme'
 import './App.css'
 
