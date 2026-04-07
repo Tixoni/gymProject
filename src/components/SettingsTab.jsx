@@ -19,6 +19,8 @@ const DEFAULT_THEME = {
   '--date-text-primary': '#a1a1aa',
   '--date-text-secondary': '#71717a',
   '--button-primary-text': '#09090b',
+  '--icon-active': '#fb923c',
+  '--icon-inactive': '#a1a1aa',
 }
 
 const STORAGE_KEY = 'ui-theme-overrides-v1'

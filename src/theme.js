@@ -68,6 +68,10 @@ export const THEME_COLORS = {
   statusDoneOff: 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600',
   statusNotDoneOn: 'border-red-500/60 bg-red-950/40 text-red-300',
   statusNotDoneOff: 'border-zinc-700/70 bg-zinc-900/20 text-zinc-600',
+
+
+  iconActive: 'text-[var(--icon-active)] [&_*]:fill-current [&_*]:stroke-[1.0]',
+  iconInactive: 'text-[var(--icon-inactive)] [&_*]:fill-current [&_*]:stroke-[1.0]',
 }
 
 /** Адаптивные классы вёрстки (отступы, типографика) */
