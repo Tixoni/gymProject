@@ -9,6 +9,6 @@ export const TRAINING_LOAD_CONSTANTS = {
   PERCENT_OF_RECORD_4_REPS: 82,
   PERCENT_OF_RECORD_2_REPS: 87,
 
-  /** Прирост веса к «той же» неделе следующего месяца: + personalMaximum * GROWTH_RATE (кг) */
+  /** Прирост веса: min(PM × GROWTH_RATE, 5) кг в шаблоне «сила» */
   GROWTH_RATE: 0.045,
-}
+} as const

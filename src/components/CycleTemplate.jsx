@@ -52,7 +52,7 @@ export default function CycleTemplate({
           <h2 className={`text-lg font-semibold leading-snug ${THEME_COLORS.heading}`}>
             {cycleLabel}
           </h2>
-          <div className="mt-1 text-xs text-zinc-500">
+          <div className=" text-xs text-zinc-500">
             Неделя {weekKey} из 18
             {!expanded && blockCount > 0 ? (
               <span className="text-zinc-600"> · {blockCount} блок(ов)</span>

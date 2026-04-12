@@ -7,14 +7,15 @@ import ComposeProgramModal from './modal/ComposeProgramModal'
 import CreateTrainingCycleModal from './modal/CreateTrainingCycleModal'
 import EditCycleModal from './modal/EditCycleModal'
 import EditTrainingModal from './modal/EditTrainingModal'
+import PresetTemplateCyclesModal from './modal/PresetTemplateCyclesModal'
 
 export default function TrainingProgramsTab({
   cycles = [],
-  onSeed,
   onRefresh,
   onRemoveCycle,
 }) {
   const [cycleModalOpen, setCycleModalOpen] = useState(false)
+  const [presetTemplatesModalOpen, setPresetTemplatesModalOpen] = useState(false)
   const [composeModalOpen, setComposeModalOpen] = useState(false)
   const [editTemplateId, setEditTemplateId] = useState(null)
   const [editCycleCtx, setEditCycleCtx] = useState(null)
@@ -106,10 +107,10 @@ export default function TrainingProgramsTab({
         </button>
         <button
           type="button"
-          onClick={onSeed}
+          onClick={() => setPresetTemplatesModalOpen(true)}
           className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
-          Добавить шаблоны (грудь, бицепс, спина, ноги)
+          Добавить шаблон
         </button>
         <button
           type="button"
@@ -215,6 +216,12 @@ export default function TrainingProgramsTab({
       <CreateTrainingCycleModal
         open={cycleModalOpen}
         onClose={() => setCycleModalOpen(false)}
+        onCreated={() => {}}
+      />
+
+      <PresetTemplateCyclesModal
+        open={presetTemplatesModalOpen}
+        onClose={() => setPresetTemplatesModalOpen(false)}
         onCreated={() => {}}
       />
 

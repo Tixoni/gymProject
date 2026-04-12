@@ -1,8 +1,13 @@
 import {
   computeSetRow,
   createComposedProgramWithSchedule,
+  createCycleWithWorkouts,
   type WorkoutTemplateSetEntry,
 } from '../trainingBuilder'
+import {
+  buildStrengthTwelveWorkouts,
+  getStrengthPresetById,
+} from '../trainingBuilder/strengthPresetPrograms'
 import {
   formatCommaNum,
   getDateKey,
@@ -820,6 +825,26 @@ export const workoutService = {
    * или вручную. Оставлено для совместимости вызова из main.
    */
   async backfillMissingPlannedDates() {},
+
+  /**
+   * Цикл «базовый тренинг на силу» (12 тренировок) из предустановки.
+   * Нужен актуальный ПМ по выбранному упражнению.
+   */
+  async createPresetStrengthCycle(presetId: string) {
+    const preset = getStrengthPresetById(presetId)
+    if (!preset) throw new Error('BAD_PRESET')
+    const pm = await this.getLatestPmWeightForExercise(preset.exerciseId)
+    if (!pm || pm <= 0) throw new Error('PM_REQUIRED')
+    const workouts = buildStrengthTwelveWorkouts(
+      pm,
+      preset.muscleGroupId,
+      preset.exerciseId,
+    )
+    return createCycleWithWorkouts({
+      cycleTitle: preset.cycleTitle,
+      workouts,
+    })
+  },
 
   async createComposedProgram(
     input: Parameters<typeof createComposedProgramWithSchedule>[0],

@@ -22,10 +22,6 @@ function App() {
   const [activeTab, setActiveTab] = useState('today')
   const [programCycles, setProgramCycles] = useState([])
 
-  const handleSeedPrograms = () => {
-    setProgramCycles([])
-  }
-
   const handleRefreshPrograms = async () => {
     if (!programCycles?.length) return
     setProgramCycles((prev) => prev ?? [])
@@ -72,7 +68,6 @@ function App() {
         {activeTab === 'trainingPrograms' && (
           <TrainingProgramsTab
             cycles={programCycles}
-            onSeed={handleSeedPrograms}
             onRefresh={handleRefreshPrograms}
             onRemoveCycle={handleRemoveProgramCycle}
           />
