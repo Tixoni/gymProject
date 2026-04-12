@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ReactComponent as PencilEditIcon } from '../assets/pencil-edit-button-img.svg?react'
 import { THEME_COLORS } from '../theme'
 import SetTemplate from './SetTemplate'
 
@@ -44,11 +45,48 @@ export default function CycleTemplate({
   return (
     <li className={cardClass}>
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+        <div className="min-w-0 flex-1 text-left">
+          <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
+            {kindLabel}
+          </div>
+          <h2 className={`text-lg font-semibold leading-snug ${THEME_COLORS.heading}`}>
+            {cycleLabel}
+          </h2>
+          <div className="mt-1 text-xs text-zinc-500">
+            Неделя {weekKey} из 18
+            {!expanded && blockCount > 0 ? (
+              <span className="text-zinc-600"> · {blockCount} блок(ов)</span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          {onRemove ? (
+            <button
+              type="button"
+              onClick={() => onRemove(cycle)}
+              className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-1.5 text-xs text-red-200 hover:bg-red-950/70"
+            >
+              Удалить
+            </button>
+          ) : null}
+          {canEditCycle ? (
+            <button
+              type="button"
+              onClick={() => onOpenCycleEditor(cycle)}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-zinc-200 hover:bg-zinc-800"
+              aria-label="Редактировать цикл"
+            >
+              <PencilEditIcon
+                className="h-4 w-4 shrink-0 [&_path]:fill-current"
+                aria-hidden
+              />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="mt-0.5 shrink-0 rounded-lg border border-zinc-600/70 bg-zinc-900/50 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-800/80"
+            className="rounded-lg border border-zinc-600/70 bg-zinc-900/50 px-2.5 py-2 text-xs text-zinc-300 hover:bg-zinc-800/80"
             aria-expanded={expanded}
             aria-label={
               expanded
@@ -62,58 +100,6 @@ export default function CycleTemplate({
           >
             {expanded ? '▼' : '▶'}
           </button>
-          {canEditCycle ? (
-            <div className="min-w-0 flex-1 rounded-lg border border-transparent px-1 py-0.5 text-left">
-              <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
-                {kindLabel}
-              </div>
-              <h2 className={`text-lg font-semibold leading-snug ${THEME_COLORS.heading}`}>
-                {cycleLabel}
-              </h2>
-              <div className="mt-1 text-xs text-zinc-500">
-                Неделя {weekKey} из 18
-                {!expanded && blockCount > 0 ? (
-                  <span className="text-zinc-600"> · {blockCount} блок(ов)</span>
-                ) : null}
-              </div>
-            </div>
-          ) : (
-            <div className="min-w-0 flex-1">
-              <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
-                {kindLabel}
-              </div>
-              <h2 className={`text-lg font-semibold leading-snug ${THEME_COLORS.heading}`}>
-                {cycleLabel}
-              </h2>
-              <div className="mt-1 text-xs text-zinc-500">
-                Неделя {weekKey} из 18
-                {!expanded && blockCount > 0 ? (
-                  <span className="text-zinc-600"> · {blockCount} блок(ов)</span>
-                ) : null}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {canEditCycle ? (
-            <button
-              type="button"
-              onClick={() => onOpenCycleEditor(cycle)}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
-            >
-              Редактировать
-            </button>
-          ) : null}
-          {onRemove ? (
-            <button
-              type="button"
-              onClick={() => onRemove(cycle)}
-              className="rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-1.5 text-xs text-red-200 hover:bg-red-950/70"
-            >
-              Удалить
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -148,9 +134,13 @@ export default function CycleTemplate({
                         <button
                           type="button"
                           onClick={() => openTraining(s)}
-                          className="shrink-0 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-200 hover:bg-zinc-800"
+                          className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-zinc-200 hover:bg-zinc-800"
+                          aria-label="Редактировать тренировку"
                         >
-                          Изменить
+                          <PencilEditIcon
+                            className="h-3.5 w-3.5 shrink-0 [&_path]:fill-current"
+                            aria-hidden
+                          />
                         </button>
                       </div>
                     ) : (

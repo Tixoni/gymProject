@@ -26,15 +26,9 @@ function App() {
     setProgramCycles([])
   }
 
-  const handleRebuildPrograms = () => {
-    setProgramCycles((prev) => prev ?? [])
-  }
-
   const handleRefreshPrograms = async () => {
-    // Если циклы уже показаны — пересчитаем их от текущих данных в хранилище.
-    // Если их нет — просто оставим пусто.
     if (!programCycles?.length) return
-    await handleRebuildPrograms()
+    setProgramCycles((prev) => prev ?? [])
   }
 
   const handleRemoveProgramCycle = (id) => {
@@ -79,7 +73,6 @@ function App() {
           <TrainingProgramsTab
             cycles={programCycles}
             onSeed={handleSeedPrograms}
-            onRebuild={handleRebuildPrograms}
             onRefresh={handleRefreshPrograms}
             onRemoveCycle={handleRemoveProgramCycle}
           />

@@ -210,7 +210,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
       return
     }
 
-    const pmMax = await workoutService.getMaxPmWeightForExercise(ex)
+    const pmMax = await workoutService.getLatestPmWeightForExercise(ex)
 
     const plans = []
     for (let i = 0; i < workouts.length; i++) {
@@ -356,7 +356,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                       patchWorkoutBulk(w.id, { weightMode: 'percent' })
                       if (exNum) {
                         void workoutService
-                          .getMaxPmWeightForExercise(exNum)
+                          .getLatestPmWeightForExercise(exNum)
                           .then((max) => {
                             if (max <= 0) {
                               setError(
@@ -479,7 +479,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                             })
                             if (exNum) {
                               void workoutService
-                                .getMaxPmWeightForExercise(exNum)
+                                .getLatestPmWeightForExercise(exNum)
                                 .then((max) => {
                                   if (max <= 0) {
                                     setError('Нет ПМ для этого упражнения.')

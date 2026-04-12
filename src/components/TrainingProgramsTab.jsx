@@ -11,7 +11,6 @@ import EditTrainingModal from './modal/EditTrainingModal'
 export default function TrainingProgramsTab({
   cycles = [],
   onSeed,
-  onRebuild,
   onRefresh,
   onRemoveCycle,
 }) {
@@ -111,13 +110,6 @@ export default function TrainingProgramsTab({
           className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
           Добавить шаблоны (грудь, бицепс, спина, ноги)
-        </button>
-        <button
-          type="button"
-          onClick={onRebuild}
-          className={`rounded-xl border px-4 py-3 text-sm font-medium lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} text-zinc-200`}
-        >
-          Пересчитать циклы по рекордам
         </button>
         <button
           type="button"

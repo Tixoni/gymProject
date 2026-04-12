@@ -234,7 +234,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
       return
     }
 
-    const pmMax = await workoutService.getMaxPmWeightForExercise(ex)
+    const pmMax = await workoutService.getLatestPmWeightForExercise(ex)
     if (
       built.parsed.some((x) => x.weightMode === 'percent') &&
       pmMax <= 0
@@ -427,7 +427,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
                             updateSetRow(s.id, { weightMode: 'percent' })
                             if (exNum) {
                               void workoutService
-                                .getMaxPmWeightForExercise(exNum)
+                                .getLatestPmWeightForExercise(exNum)
                                 .then((max) => {
                                   if (max <= 0) {
                                     setError('Нет ПМ для этого упражнения.')

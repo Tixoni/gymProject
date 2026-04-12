@@ -41,13 +41,19 @@ export const workoutService = {
 
   // --- PERSONAL MAXIMUMS (PM) ---
   async addPersonalMaximum(exerciseId: number, weight: number, reps: number, comment: string = '') {
-    return await db.personalMaximumsTable.add({
+    const pmId = await db.personalMaximumsTable.add({
       exerciseId,
       weight,
       reps,
       date: new Date().toISOString(),
       textComment: comment
     });
+    try {
+      await this.recalculateAllTemplatesForExercise(exerciseId)
+    } catch (e) {
+      console.error('recalculateAllTemplatesForExercise', e)
+    }
+    return pmId
   },
 
   async getPMByExercise(exerciseId: number) {
@@ -58,14 +64,142 @@ export const workoutService = {
     return rows.reverse()
   },
 
-  /** Максимальный вес среди записей ПМ по упражнению (для расчёта % от рекорда) */
-  async getMaxPmWeightForExercise(exerciseId: number) {
+  /**
+   * База для расчёта % от ПМ — вес из **последней по дате** записи (актуальное состояние),
+   * а не исторический максимум.
+   */
+  async getLatestPmWeightForExercise(exerciseId: number) {
     const rows = await db.personalMaximumsTable
       .where('exerciseId')
       .equals(exerciseId)
       .toArray()
     if (!rows.length) return 0
-    return Math.max(...rows.map((r) => r.weight))
+    rows.sort((a, b) => {
+      const cmp = String(b.date).localeCompare(String(a.date))
+      if (cmp !== 0) return cmp
+      return (b.pmId ?? 0) - (a.pmId ?? 0)
+    })
+    const w = Number(rows[0].weight)
+    return Number.isFinite(w) ? w : 0
+  },
+
+  /**
+   * Пересчитать подходы и setsJson по текущему ПМ для одного шаблона
+   * (учитывает составные тренировки: трогаются только сеты этого упражнения).
+   */
+  async recalculateSingleTemplateFromPm(templateId: number) {
+    const tmpl = await db.workoutTemplatesTable.get(templateId)
+    if (!tmpl?.trainingId || tmpl.templateId == null) return
+    const trainingId = tmpl.trainingId
+    const exerciseId = tmpl.exerciseId
+    const pmMax = await this.getLatestPmWeightForExercise(exerciseId)
+
+    let plan: WorkoutTemplateSetEntry[] = []
+    try {
+      const parsed = JSON.parse(tmpl.setsJson) as unknown
+      if (Array.isArray(parsed)) {
+        for (const row of parsed) {
+          const r = row as Record<string, unknown>
+          const wm =
+            r.weightMode === 'percent' ? 'percent' : ('kg' as const)
+          plan.push({
+            weightMode: wm,
+            weightKg: Number(r.weightKg ?? r.displayWeightKg) || 0,
+            percentOfPm:
+              Number(r.percentOfPm ?? r.displayPercentOfPm) || 0,
+            reps: Math.max(1, Math.floor(Number(r.reps)) || 1),
+          })
+        }
+      }
+    } catch {
+      plan = []
+    }
+
+    const existingSets = await db.setsTable
+      .where('trainingId')
+      .equals(trainingId)
+      .toArray()
+    if (!plan.length && existingSets.length) {
+      const mine = existingSets
+        .filter((s) => s.exerciseId === exerciseId)
+        .sort((a, b) => (a.setNumber ?? 0) - (b.setNumber ?? 0))
+      plan = mine.map((s) => ({
+        weightMode:
+          (s.percentageOfPM ?? 0) > 0
+            ? ('percent' as const)
+            : ('kg' as const),
+        weightKg: s.weight,
+        percentOfPm: s.percentageOfPM,
+        reps: s.reps,
+      }))
+    }
+    if (!plan.length) return
+
+    await db.transaction(
+      'rw',
+      [db.setsTable, db.workoutTemplatesTable],
+      async () => {
+        const existing = await db.setsTable
+          .where('trainingId')
+          .equals(trainingId)
+          .toArray()
+        for (const s of existing) {
+          if (s.exerciseId === exerciseId && s.setId != null) {
+            await db.setsTable.delete(s.setId)
+          }
+        }
+        const after = await db.setsTable
+          .where('trainingId')
+          .equals(trainingId)
+          .toArray()
+        let sn = after.reduce(
+          (m, s) => Math.max(m, s.setNumber ?? 0),
+          0,
+        )
+        const enriched: Record<string, unknown>[] = []
+        for (const entry of plan) {
+          const { weight, percentageOfPM, reps } = computeSetRow(
+            entry,
+            pmMax,
+          )
+          const dispKg = Math.round(weight * 1000) / 1000
+          const dispPct = Math.round(percentageOfPM * 100) / 100
+          enriched.push({
+            weightMode: entry.weightMode,
+            weightKg: entry.weightKg,
+            percentOfPm: entry.percentOfPm,
+            reps: entry.reps,
+            displayWeightKg: dispKg,
+            displayPercentOfPm: dispPct,
+          })
+          sn += 1
+          await db.setsTable.add({
+            trainingId,
+            exerciseId,
+            setNumber: sn,
+            weight: dispKg,
+            reps,
+            percentageOfPM: dispPct,
+            status: 'not_completed',
+          })
+        }
+        await db.workoutTemplatesTable.update(templateId, {
+          setsJson: JSON.stringify(enriched),
+        })
+      },
+    )
+  },
+
+  async recalculateAllTemplatesForExercise(exerciseId: number) {
+    const templates = await db.workoutTemplatesTable
+      .where('exerciseId')
+      .equals(exerciseId)
+      .toArray()
+    for (const t of templates) {
+      if (t.templateId != null) {
+        await this.recalculateSingleTemplateFromPm(t.templateId)
+      }
+    }
   },
 
 
@@ -249,7 +383,7 @@ export const workoutService = {
     if (c.cycleKind === SCHEDULED_PROGRAM_CYCLE_KIND) {
       throw new Error('PROGRAM_CYCLE')
     }
-    const pmMax = await this.getMaxPmWeightForExercise(exerciseId)
+    const pmMax = await this.getLatestPmWeightForExercise(exerciseId)
 
     await db.transaction(
       'rw',
