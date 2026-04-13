@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
 
@@ -9,6 +10,7 @@ export default function AddPersonalMaximumModal({
   onClose,
   onSaved,
 }) {
+  useBodyScrollLock(open)
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
   const [comment, setComment] = useState('')

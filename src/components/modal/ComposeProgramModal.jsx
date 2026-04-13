@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
 import { getDateKey } from '../../utils/dateKeys'
@@ -15,6 +16,7 @@ const WEEKDAYS = [
 ]
 
 export default function ComposeProgramModal({ open, onClose, onCreated }) {
+  useBodyScrollLock(open)
   const [title, setTitle] = useState('')
   const [startDateKey, setStartDateKey] = useState(() => getDateKey(new Date()) ?? '')
   const [repeatRounds, setRepeatRounds] = useState(1)

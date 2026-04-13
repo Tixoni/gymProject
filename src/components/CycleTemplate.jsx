@@ -15,8 +15,8 @@ export default function CycleTemplate({
   onOpenCycleEditor,
   onOpenTrainingEditor,
 }) {
-  const [expanded, setExpanded] = useState(true)
-  const cardClass = `mb-4 rounded-xl border ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionBackground} p-4 sm:p-5`
+  const [expanded, setExpanded] = useState(false)
+  const cardClass = `mb-2 rounded-xl border ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionBackground} px-3 py-1 sm:p-5`
   const weekKey = String(clampWeek(cycle?.currentWeek ?? 1))
   const weekBlock = cycle?.weeks?.[weekKey] ?? []
   const blockCount = weekBlock?.length ?? 0
@@ -24,6 +24,7 @@ export default function CycleTemplate({
   const cycleLabel = cycle?.cycleName ?? cycle?.muscleGroup ?? 'Цикл'
   const isProgram = !!cycle?.isScheduledProgram
   const kindLabel = isProgram ? 'Тренировочная программа:' : 'Цикл:'
+  const completed = cycle?.status === 'completed'
   const canEditCycle =
     typeof onOpenCycleEditor === 'function' && cycle?.cycleId != null
 
@@ -46,21 +47,25 @@ export default function CycleTemplate({
     <li className={cardClass}>
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1 text-left">
-          <div className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
+          <div className={`text-[10px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}>
             {kindLabel}
           </div>
           <h2 className={`text-lg font-semibold leading-snug ${THEME_COLORS.heading}`}>
             {cycleLabel}
           </h2>
-          <div className=" text-xs text-zinc-500">
-            Неделя {weekKey} из 18
+          <div className="text-xs text-zinc-500">
+            {completed ? (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                Завершен
+              </span>
+            ) : null}
             {!expanded && blockCount > 0 ? (
-              <span className="text-zinc-600"> · {blockCount} блок(ов)</span>
+              <span className="text-zinc-600"> · {blockCount} тренировок</span>
             ) : null}
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
           {onRemove ? (
             <button
               type="button"
@@ -74,7 +79,7 @@ export default function CycleTemplate({
             <button
               type="button"
               onClick={() => onOpenCycleEditor(cycle)}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border border-zinc-700 bg-zinc-900 p-4 text-zinc-200 hover:bg-zinc-800"
               aria-label="Редактировать цикл"
             >
               <PencilEditIcon
@@ -86,7 +91,7 @@ export default function CycleTemplate({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="rounded-lg border border-zinc-600/70 bg-zinc-900/50 px-2.5 py-2 text-xs text-zinc-300 hover:bg-zinc-800/80"
+            className="flex items-center justify-center rounded-lg px-2 py-1 transition hover:bg-zinc-900/25"
             aria-expanded={expanded}
             aria-label={
               expanded
@@ -98,13 +103,23 @@ export default function CycleTemplate({
                   : 'Развернуть цикл'
             }
           >
-            {expanded ? '▼' : '▶'}
+            <span
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/10 text-zinc-300 transition lg:h-8 lg:w-8 lg:text-lg ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            >
+              ▾
+            </span>
           </button>
         </div>
       </div>
 
-      {expanded ? (
-        <>
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
           {weekBlock?.length ? (
             <div className="mt-3 grid gap-2">
               {weekBlock.map((s, idx) => {
@@ -122,11 +137,6 @@ export default function CycleTemplate({
                     {canEditTraining ? (
                       <div className="mb-2 flex items-start justify-between gap-2 px-1 py-1">
                         <div className="min-w-0">
-                        <div
-                          className={`text-[11px] font-medium uppercase tracking-wide ${THEME_COLORS.contentMuted}`}
-                        >
-                          Тренировка:
-                        </div>
                         <div className="text-sm font-semibold text-zinc-100">
                           {trainingTitle}
                         </div>
@@ -176,13 +186,13 @@ export default function CycleTemplate({
               <summary className="cursor-pointer text-sm text-orange-400 hover:text-orange-300">
                 Таблица плана
               </summary>
-              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-800 bg-zinc-950/80 p-3 text-left text-xs leading-relaxed text-zinc-400">
+              <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-800 bg-zinc-950/80 p-3 text-left text-xs leading-relaxed text-zinc-400">
                 {cycle.planText}
               </pre>
             </details>
           ) : null}
-        </>
-      ) : null}
+        </div>
+      </div>
     </li>
   )
 }

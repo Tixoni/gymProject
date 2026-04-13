@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
 import { getDateKey } from '../../utils/dateKeys'
 
 export default function AddBodyWeightModal({ open, onClose, onSaved }) {
+  useBodyScrollLock(open)
   const today = useMemo(() => getDateKey(new Date()) ?? '', [])
   const [date, setDate] = useState(today)
   const [weight, setWeight] = useState('')

@@ -28,8 +28,13 @@ export default function InfoAccordion({ title = 'Справка', children }) {
         </span>
       </button>
 
-      <div id={contentId} className={open ? 'block' : 'hidden'}>
-        <div className="px-4 pb-4 text-sm text-zinc-200 lg:px-5 lg:pb-5 lg:text-base">
+      <div
+        id={contentId}
+        className={`grid transition-all duration-300 ease-out ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden px-4 pb-4 text-sm text-zinc-200 lg:px-5 lg:pb-5 lg:text-base">
           {children}
         </div>
       </div>

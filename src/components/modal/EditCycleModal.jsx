@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { SCHEDULED_PROGRAM_CYCLE_KIND, db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
@@ -23,6 +24,7 @@ export default function EditCycleModal({
   onDuplicate,
   onDelete,
 }) {
+  useBodyScrollLock(open)
   const [cycleTitle, setCycleTitle] = useState('')
   const [muscleGroupId, setMuscleGroupId] = useState('')
   const [exerciseId, setExerciseId] = useState('')

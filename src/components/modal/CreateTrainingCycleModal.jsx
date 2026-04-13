@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { createCycleWithWorkouts } from '../../trainingBuilder'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import AddPersonalMaximumModal from './AddPersonalMaximumModal'
 
 function newRowId() {
@@ -96,6 +97,7 @@ function buildParsedSetsForWorkout(w) {
 }
 
 export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
+  useBodyScrollLock(open)
   const [cycleTitle, setCycleTitle] = useState('')
   const [cycleMuscleGroupId, setCycleMuscleGroupId] = useState('')
   const [cycleExerciseId, setCycleExerciseId] = useState('')

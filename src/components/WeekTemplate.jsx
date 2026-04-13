@@ -118,10 +118,9 @@ export default function WeekTemplate({
           </button>
 
           <span
-            className={`inline-flex items-center justify-center rounded-lg text-zinc-400 transition ${
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/10 text-zinc-300 transition lg:h-8 lg:w-8 lg:text-lg ${
               collapsed ? '' : 'rotate-180'
             }`}
-            style={{ transformOrigin: 'center' }}
           >
             ▾
           </span>
@@ -130,27 +129,30 @@ export default function WeekTemplate({
 
       <div
         id={collapseId}
-        className={`${collapsed ? 'hidden' : 'block'} pt-2 lg:pt-3`}
+        className={`grid pt-2 transition-all duration-300 ease-out lg:pt-3 ${
+          collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+        }`}
       >
-        {trainings.length ? (
-          <ul className="list-none space-y-2 pl-0">
-            {trainings.map((t, idx) => (
-              <li key={t?.id ?? t?.trainingId ?? idx} className="rounded-lg">
-                {t?.node ?? (
-                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200 lg:p-4 lg:text-base">
-                    {t?.title ?? t?.name ?? t?.trainingTitle ?? `Тренировка ${idx + 1}`}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500 lg:p-4 lg:text-base">
-            Тренировок пока нет.
-          </div>
-        )}
+        <div className="overflow-hidden">
+          {trainings.length ? (
+            <ul className="list-none space-y-2 pl-0">
+              {trainings.map((t, idx) => (
+                <li key={t?.id ?? t?.trainingId ?? idx} className="rounded-lg">
+                  {t?.node ?? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/20 p-3 text-sm text-zinc-200 lg:p-4 lg:text-base">
+                      {t?.title ?? t?.name ?? t?.trainingTitle ?? `Тренировка ${idx + 1}`}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 p-3 text-sm text-zinc-500 lg:p-4 lg:text-base">
+              Тренировок пока нет.
+            </div>
+          )}
+        </div>
       </div>
     </section>
   )
 }
-

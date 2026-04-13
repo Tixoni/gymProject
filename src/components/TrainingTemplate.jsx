@@ -152,18 +152,28 @@ export default function TrainingTemplate({
             aria-controls={collapseId}
             aria-expanded={!collapsed}
             aria-label={collapsed ? 'Развернуть тренировку' : 'Свернуть тренировку'}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-900/40 ${
-              collapsed ? '' : 'rotate-180'
-            }`}
+            className="flex items-center justify-center rounded-lg px-2 py-1 transition hover:bg-zinc-900/25"
             onClick={() => setCollapsed((v) => !v)}
           >
-            ▾
+            <span
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/10 text-zinc-300 transition lg:h-8 lg:w-8 lg:text-lg ${
+                collapsed ? '' : 'rotate-180'
+              }`}
+            >
+              ▾
+            </span>
           </button>
         </div>
       </div>
 
-      <div id={collapseId} className={collapsed ? 'hidden' : 'block'}>
-        <div className="px-3 pb-3 pt-1 lg:px-4 lg:pb-4 lg:pt-2">
+      <div
+        id={collapseId}
+        className={`grid transition-all duration-300 ease-out ${
+          collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-3 pb-3 pt-1 lg:px-4 lg:pb-4 lg:pt-2">
           {groups.length ? (
             <ul className="list-none space-y-4 pl-0">
               {groups.map((g) => {
@@ -224,19 +234,20 @@ export default function TrainingTemplate({
           )}
         </div>
 
-        <div className="border-t border-zinc-800 px-3 py-3 lg:px-4 lg:py-4">
-          <div className="flex items-center justify-between text-xs text-zinc-500 lg:text-sm">
-            <span>Прогресс</span>
-            <span className="text-zinc-400">{progress.percent}%</span>
-          </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-zinc-800 bg-zinc-900/20">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${progress.percent}%`,
-                background: 'rgba(249,115,22,0.85)',
-              }}
-            />
+          <div className="border-t border-zinc-800 px-3 py-3 lg:px-4 lg:py-4">
+            <div className="flex items-center justify-between text-xs text-zinc-500 lg:text-sm">
+              <span>Прогресс</span>
+              <span className="text-zinc-400">{progress.percent}%</span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-zinc-800 bg-zinc-900/20">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${progress.percent}%`,
+                  background: 'rgba(249,115,22,0.85)',
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

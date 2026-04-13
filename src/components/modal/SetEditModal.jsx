@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import PartialRepsStepper from './PartialRepsStepper'
 
 function OptionCard({ active, title, subtitle, tone, icon, onClick }) {
@@ -55,6 +56,7 @@ export default function SetEditModal({
   onClose,
   onSave,
 }) {
+  useBodyScrollLock(open)
   const [status, setStatus] = useState(set?.status ?? 'not_completed')
   const [partialReps, setPartialReps] = useState(0)
 

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
@@ -67,6 +68,7 @@ function planToSetRows(plan) {
 }
 
 export default function EditTrainingModal({ open, templateId, onClose, onSaved }) {
+  useBodyScrollLock(open)
   const [workTitle, setWorkTitle] = useState('')
   const [muscleGroupId, setMuscleGroupId] = useState('')
   const [exerciseId, setExerciseId] = useState('')

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { STRENGTH_PROGRAM_PRESETS } from '../../trainingBuilder/strengthPresetPrograms'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
 
 export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) {
+  useBodyScrollLock(open)
   const [selectedId, setSelectedId] = useState(STRENGTH_PROGRAM_PRESETS[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -63,7 +65,7 @@ export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) 
         aria-labelledby="preset-cycles-title"
       >
         <div
-          className={`sticky top-0 z-[1] border-b ${THEME_COLORS.modalSectionBorder} px-5 py-4 lg:px-6 lg:py-5`}
+          className={` top-0 z-[1] border-b ${THEME_COLORS.modalSectionBorder} px-5 py-4 lg:px-6 lg:py-5`}
         >
           <div
             className={`text-[11px] font-semibold tracking-wide ${THEME_COLORS.successHintText} lg:text-xs`}
@@ -77,8 +79,7 @@ export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) 
             Добавить цикл из шаблона
           </h2>
           <p className={`mt-1 text-xs lg:text-sm ${THEME_COLORS.dateTextSecondary}`}>
-            Выберите программу — цикл сохранится в базе и появится в списке «Циклы (база
-            данных)».
+            Выберите программу — цикл сохранится в базе и появится в списке «Циклы».
           </p>
         </div>
 

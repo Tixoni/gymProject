@@ -96,7 +96,7 @@ export default function TrainingProgramsTab({
           onClick={() => setCycleModalOpen(true)}
           className={`rounded-xl border px-4 py-3 text-sm font-semibold lg:rounded-2xl lg:px-6 lg:py-4 lg:text-base ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground} ${THEME_COLORS.contentText} hover:bg-zinc-800/60`}
         >
-          Новый цикл (форма + локальное хранилище)
+          Новый цикл
         </button>
         <button
           type="button"

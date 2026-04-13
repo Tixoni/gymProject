@@ -17,7 +17,37 @@ import {
 import type { SetRow, Training } from './db'
 import { SCHEDULED_PROGRAM_CYCLE_KIND, db } from './db'
 
+const DEFAULT_SET_STATUS = 'not_completed'
+
+function isSetCompleted(status: string | undefined) {
+  return Boolean(status && status !== DEFAULT_SET_STATUS)
+}
+
 export const workoutService = {
+  async refreshCycleStatusByTrainingId(trainingId: number) {
+    const training = await db.trainingsTable.get(trainingId)
+    const cycleId = training?.cycleId
+    if (cycleId == null) return
+
+    const trainings = await db.trainingsTable
+      .where('cycleId')
+      .equals(cycleId)
+      .toArray()
+    if (!trainings.length) return
+
+    const allCompleted = await Promise.all(
+      trainings.map(async (t) => {
+        const tid = t.trainingId
+        if (tid == null) return false
+        const sets = await db.setsTable.where('trainingId').equals(tid).toArray()
+        return sets.length > 0 && sets.every((s) => isSetCompleted(s.status))
+      }),
+    ).then((flags) => flags.every(Boolean))
+
+    await db.trainingCyclesTable.update(cycleId, {
+      status: allCompleted ? 'completed' : 'planned',
+    })
+  },
   
   // --- MUSCLE GROUPS ---
   async getAllMuscleGroups() {
@@ -95,6 +125,10 @@ export const workoutService = {
   async recalculateSingleTemplateFromPm(templateId: number) {
     const tmpl = await db.workoutTemplatesTable.get(templateId)
     if (!tmpl?.trainingId || tmpl.templateId == null) return
+    if (tmpl.cycleId != null) {
+      const cycle = await db.trainingCyclesTable.get(tmpl.cycleId)
+      if (cycle?.status === 'completed') return
+    }
     const trainingId = tmpl.trainingId
     const exerciseId = tmpl.exerciseId
     const pmMax = await this.getLatestPmWeightForExercise(exerciseId)
@@ -251,7 +285,11 @@ export const workoutService = {
   },
 
   async updateSetById(setId: number, patch: Partial<SetRow>) {
+    const row = await db.setsTable.get(setId)
     await db.setsTable.update(setId, patch)
+    if (row?.trainingId != null) {
+      await this.refreshCycleStatusByTrainingId(row.trainingId)
+    }
   },
 
   /**
@@ -811,6 +849,7 @@ export const workoutService = {
           deleteSpec,
           cycleKind: cycMeta?.cycleKind,
           isScheduledProgram: isProgram,
+          status: cycMeta?.status ?? 'planned',
         },
       ]
     })
