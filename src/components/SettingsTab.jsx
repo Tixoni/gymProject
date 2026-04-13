@@ -3,7 +3,6 @@ import { THEME_COLORS } from '../theme'
 
 const DEFAULT_THEME = {
   '--app-bg': '#09090b',
-  '--chrome-bg': '#000000',
   '--chrome-text': '#fafafa',
   '--chrome-border': '#27272a',
   '--content-text': '#e4e4e7',
@@ -72,15 +71,14 @@ export default function SettingsTab() {
           Настройки темы
         </h2>
         <p className={`mt-1 text-sm ${THEME_COLORS.contentMuted}`}>
-          Меняйте базовые цвета интерфейса. Применение — после сохранения.
+          Меняйте базовые цвета интерфейса.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
-            ['--accent-bg', 'Основной оранжевый'],
-            ['--accent-bg-hover', 'Оранжевый при наведении'],
+            ['--accent-bg', 'Основной цвет'],
+            ['--accent-bg-hover', 'Цвет при наведении'],
             ['--app-bg', 'Фон приложения'],
-            ['--section-bg', 'Фон карточек'],
-            ['--chrome-bg', 'Фон header/footer'],
+            ['--section-bg', 'Фон карточек тренировок'],
             ['--content-text', 'Основной текст'],
           ].map(([k, label]) => (
             <label key={k} className={`block text-xs font-medium ${THEME_COLORS.contentMuted}`}>

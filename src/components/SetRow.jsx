@@ -27,19 +27,23 @@ function statusBadge(status) {
   }
 }
 
-export default function SetRow({ set, onClick }) {
+export default function SetRow({ set, onClick, setIndex = null, totalSets = null }) {
   const badge = statusBadge(set?.status)
   const weight = formatWeightKg(set?.weight)
   const pmStr = formatPercentPm(set?.percentageOfPM)
   const weightLine =
     pmStr != null ? `${weight} кг (${pmStr}% ПМ)` : `${weight} кг`
   const reps = set?.reps ?? '—'
+  const setPositionLabel =
+    Number.isFinite(Number(setIndex)) && Number.isFinite(Number(totalSets))
+      ? `Подход ${Number(setIndex) + 1}/${Number(totalSets)}`
+      : `Подход ${set?.setNumber ?? '—'}`
   const partialSubtitle =
     set?.status === 'partial' &&
     set?.actualReps != null &&
     Number.isFinite(Number(set.actualReps)) &&
     Number.isFinite(Number(set.reps))
-      ? `${set.actualReps} из ${set.reps}`
+      ? `${setPositionLabel} · ${set.actualReps} из ${set.reps}`
       : null
 
   return (
@@ -53,7 +57,7 @@ export default function SetRow({ set, onClick }) {
           {weightLine} × {reps}
         </div>
         <div className="mt-0.5 text-xs text-zinc-500 lg:text-sm">
-          {partialSubtitle ?? `Подход ${set?.setNumber ?? '—'}`}
+          {partialSubtitle ?? setPositionLabel}
         </div>
       </div>
 

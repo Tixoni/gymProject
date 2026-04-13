@@ -20,9 +20,9 @@ export default function StatisticsTab() {
   const [weightModalOpen, setWeightModalOpen] = useState(false)
   const [pmModalOpen, setPmModalOpen] = useState(false)
   const [pmExerciseId, setPmExerciseId] = useState('')
-  const [chartSectionOpen, setChartSectionOpen] = useState(true)
-  const [weightSectionOpen, setWeightSectionOpen] = useState(true)
-  const [pmSectionOpen, setPmSectionOpen] = useState(true)
+  const [chartSectionOpen, setChartSectionOpen] = useState(false)
+  const [weightSectionOpen, setWeightSectionOpen] = useState(false)
+  const [pmSectionOpen, setPmSectionOpen] = useState(false)
   const [recordsSort, setRecordsSort] = useState('highest')
   const [chartMode, setChartMode] = useState('weight')
   /** Одно упражнение для графика ПМ (id из списка или '') */

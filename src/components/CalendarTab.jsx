@@ -297,7 +297,7 @@ export default function CalendarTab() {
             <p className="text-sm text-zinc-500">Загрузка…</p>
           ) : !dayTrainings.length ? (
             <p className="text-sm text-zinc-500">
-              Нет запланированных тренировок. Оранжевая точка под днём — есть
+              Нет запланированных тренировок. Маркер под днём означает, что
               тренировка в базе.
             </p>
           ) : (

@@ -10,11 +10,13 @@ function CalendarDay({ date, isToday, isSelected, isOtherMonth, hasPending, onSe
   const baseCircle =
     'w-9 h-9 flex items-center justify-center rounded-full text-sm transition-colors';
 
-  let circleClasses = isOtherMonth ? 'text-zinc-600 opacity-60' : 'text-zinc-300';
+  let circleClasses = isOtherMonth
+    ? `${THEME_COLORS.contentMuted} opacity-60`
+    : THEME_COLORS.contentText;
   if (isSelected) {
     circleClasses = `${THEME_COLORS.accentBg} text-white opacity-100`;
   } else if (isToday) {
-    circleClasses = 'border border-white text-white opacity-100';
+    circleClasses = `${THEME_COLORS.chromeBorder} border ${THEME_COLORS.heading} opacity-100`;
   }
 
   return (
@@ -27,7 +29,7 @@ function CalendarDay({ date, isToday, isSelected, isOtherMonth, hasPending, onSe
         {dayNumber}
       </div>
       {hasPending && (
-        <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+        <div className={`h-1.5 w-1.5 rounded-full ${THEME_COLORS.calendarPendingDot}`} />
       )}
     </button>
   );

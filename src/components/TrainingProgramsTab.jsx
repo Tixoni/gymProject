@@ -165,7 +165,7 @@ export default function TrainingProgramsTab({
           <h2
             className={`mb-3 text-base font-semibold lg:text-lg ${THEME_COLORS.heading}`}
           >
-            Циклы (база данных)
+            Циклы
           </h2>
           <ul className="list-none space-y-0 p-0">
             {baseDbCycles.map((c) => (

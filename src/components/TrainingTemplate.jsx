@@ -112,7 +112,7 @@ export default function TrainingTemplate({
             🗓
           </span>
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-zinc-100 lg:text-base">
+            <div className={`text-sm font-semibold lg:text-base ${THEME_COLORS.contentText}`}>
               {dayLabel}
               {dateLabel ? <span className="text-zinc-500"> · {dateLabel}</span> : null}
             </div>
@@ -178,6 +178,9 @@ export default function TrainingTemplate({
             <ul className="list-none space-y-4 pl-0">
               {groups.map((g) => {
                 const meta = exercisesById?.[g.exerciseId]
+                const exerciseDoneCount = g.sets.filter(
+                  (s) => s?.status && s.status !== 'not_completed',
+                ).length
                 const title =
                   meta?.title ??
                   (typeof meta === 'string' ? meta : null) ??
@@ -195,7 +198,7 @@ export default function TrainingTemplate({
 
                 return (
                   <li key={String(g.exerciseId)}>
-                    <div className=" border-b border-orange-500/25 bg-zinc-950/30 pb-3">
+                    <div className={`border-b ${THEME_COLORS.chromeBorder} bg-zinc-950/30 pb-3`}>
                       <div className="mb-3 flex items-start gap-3">
                         {iconSrc ? (
                           <img
@@ -211,14 +214,24 @@ export default function TrainingTemplate({
                             нет
                           </div>
                         )}
-                        <div className="min-w-0 text-sm font-semibold leading-snug text-orange-100 lg:text-base">
-                          {title}
+                        <div className="min-w-0">
+                          <div className={`text-sm font-semibold leading-snug lg:text-base ${THEME_COLORS.contentText}`}>
+                            {title}
+                          </div>
+                          <div className={`mt-1 text-xs ${THEME_COLORS.contentMuted}`}>
+                            {exerciseDoneCount}/{g.sets.length} подходов
+                          </div>
                         </div>
                       </div>
                       <ul className="list-none space-y-2 pl-0">
-                        {g.sets.map((s) => (
+                        {g.sets.map((s, setIdx) => (
                           <li key={s?.setId ?? `${s?.exerciseId}-${s?.setNumber}`}>
-                            <SetRow set={s} onClick={() => setEditingSet(s)} />
+                            <SetRow
+                              set={s}
+                              setIndex={setIdx}
+                              totalSets={g.sets.length}
+                              onClick={() => setEditingSet(s)}
+                            />
                           </li>
                         ))}
                       </ul>

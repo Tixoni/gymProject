@@ -7,7 +7,7 @@ export const THEME_COLORS = {
   appBackground: 'bg-[var(--app-bg)]',
 
   // Верхняя и нижняя панели (хром)
-  chrome: 'bg-[var(--chrome-bg)]',
+  chrome: 'bg-[var(--app-bg)]',
   chromeText: 'text-[var(--chrome-text)]',
   chromeBorder: 'border-[var(--chrome-border)]',
 
@@ -32,6 +32,7 @@ export const THEME_COLORS = {
   accentCheckbox: 'text-[var(--accent-text)]',
   dateTextPrimary: 'text-[var(--date-text-primary)]',
   dateTextSecondary: 'text-[var(--date-text-secondary)]',
+  calendarPendingDot: 'bg-[var(--accent-bg)]',
 
   // Модальные окна и формы
   modalBackdrop: 'bg-black/70',
