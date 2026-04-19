@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { createCycleWithWorkouts } from '../../trainingBuilder'
@@ -15,7 +15,7 @@ function newRowId() {
 function defaultBulk() {
   return {
     weightMode: 'kg',
-    weightKg: '',
+    weightKg: '0',
     percentPm: '',
     reps: '',
     numSets: 3,
@@ -48,8 +48,8 @@ function parseOneSetEntry(s) {
   }
   if (s.weightMode === 'kg') {
     const w = Number(String(s.weightKg).replace(',', '.'))
-    if (!Number.isFinite(w) || w <= 0) {
-      return { ok: false, message: 'Укажите положительный вес (кг).' }
+    if (!Number.isFinite(w) || w < 0) {
+      return { ok: false, message: 'Укажите вес (кг) не меньше 0.' }
     }
     return {
       ok: true,
@@ -164,6 +164,13 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
     },
     [allExercises],
   )
+
+  const weightHint = useMemo(() => {
+    const ex = (allExercises ?? []).find(
+      (e) => e.exerciseId === Number(cycleExerciseId),
+    )
+    return workoutService.getWeightInputHintForExercise(ex)
+  }, [allExercises, cycleExerciseId])
 
   useEffect(() => {
     if (!open) return
@@ -388,6 +395,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                         patchWorkoutBulk(w.id, { weightKg: e.target.value })
                       }
                       className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-2 py-2 text-zinc-100"
+                      placeholder={weightHint}
                     />
                   </label>
                 ) : (
@@ -509,7 +517,7 @@ export default function CreateTrainingCycleModal({ open, onClose, onCreated }) {
                             })
                           }
                           className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5 text-sm text-zinc-100"
-                          placeholder="кг"
+                          placeholder={weightHint}
                         />
                       ) : (
                         <input

@@ -19,8 +19,8 @@ function parseOneSetEntry(s) {
   }
   if (s.weightMode === 'kg') {
     const w = Number(String(s.weightKg).replace(',', '.'))
-    if (!Number.isFinite(w) || w <= 0) {
-      return { ok: false, message: 'Укажите положительный вес (кг).' }
+    if (!Number.isFinite(w) || w < 0) {
+      return { ok: false, message: 'Укажите вес (кг) не меньше 0.' }
     }
     return {
       ok: true,
@@ -186,7 +186,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
       {
         id: newRowId(),
         weightMode: last?.weightMode ?? 'kg',
-        weightKg: last?.weightKg ?? '',
+        weightKg: last?.weightKg ?? '0',
         percentPm: last?.percentPm ?? '',
         reps: last?.reps ?? '',
       },
@@ -286,6 +286,9 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
   const mgNum = Number(muscleGroupId)
   const exNum = Number(exerciseId)
   const exList = exercisesForGroup(muscleGroupId)
+  const weightHint = workoutService.getWeightInputHintForExercise(
+    (allExercises ?? []).find((e) => e.exerciseId === exNum),
+  )
 
   return (
     <>
@@ -455,7 +458,7 @@ export default function EditTrainingModal({ open, templateId, onClose, onSaved }
                             updateSetRow(s.id, { weightKg: e.target.value })
                           }
                           className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5 text-sm text-zinc-100"
-                          placeholder="кг"
+                          placeholder={weightHint}
                         />
                       ) : (
                         <input

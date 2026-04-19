@@ -19,7 +19,8 @@ const CHART_COLORS = [
 export default function StatisticsTab() {
   const [weightModalOpen, setWeightModalOpen] = useState(false)
   const [pmModalOpen, setPmModalOpen] = useState(false)
-  const [pmExerciseId, setPmExerciseId] = useState('')
+  /** Фильтр списка рекордов: '' = все упражнения */
+  const [pmListFilterExerciseId, setPmListFilterExerciseId] = useState('')
   const [chartSectionOpen, setChartSectionOpen] = useState(false)
   const [weightSectionOpen, setWeightSectionOpen] = useState(false)
   const [pmSectionOpen, setPmSectionOpen] = useState(false)
@@ -45,12 +46,6 @@ export default function StatisticsTab() {
     }
     return map
   }, [exercises])
-
-  const selectedExerciseTitle = useMemo(() => {
-    const id = Number(pmExerciseId)
-    if (!id) return 'Упражнение'
-    return exerciseMap.get(id) ?? `Упражнение #${id}`
-  }, [pmExerciseId, exerciseMap])
 
   const bestPmRows = useMemo(() => {
     const byExercise = new Map()
@@ -81,10 +76,26 @@ export default function StatisticsTab() {
     })
   }, [pmRows])
 
-  const displayedPmRows =
-    recordsSort === 'highest'
-      ? bestPmRows.slice(0, 30)
-      : newestPmRows.slice(0, 30)
+  const displayedPmRows = useMemo(() => {
+    const exId = Number(pmListFilterExerciseId)
+    const hasFilter = Number.isFinite(exId) && exId > 0
+    if (recordsSort === 'highest') {
+      if (hasFilter) {
+        const one = bestPmRows.find((r) => r.exerciseId === exId)
+        return one ? [one] : []
+      }
+      return bestPmRows.slice(0, 30)
+    }
+    if (hasFilter) {
+      return newestPmRows.filter((r) => r.exerciseId === exId).slice(0, 30)
+    }
+    return newestPmRows.slice(0, 30)
+  }, [
+    recordsSort,
+    pmListFilterExerciseId,
+    bestPmRows,
+    newestPmRows,
+  ])
 
   const exercisesWithPm = useMemo(() => {
     const ids = new Set((pmRows ?? []).map((r) => r.exerciseId))
@@ -249,29 +260,35 @@ export default function StatisticsTab() {
         onToggle={() => setPmSectionOpen((v) => !v)}
       >
         <p className={`text-sm ${THEME_COLORS.contentMuted}`}>
-          Выберите упражнение и добавьте запись.
+          Добавление — в модальном окне (группа и упражнение). Ниже можно отфильтровать список записей.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <select
-            value={pmExerciseId}
-            onChange={(e) => setPmExerciseId(e.target.value)}
-            className={`min-w-[220px] flex-1 rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 text-sm ${THEME_COLORS.inputText}`}
+        <button
+          type="button"
+          onClick={() => setPmModalOpen(true)}
+          className={`mt-3 rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_COLORS.buttonPrimaryText} ${THEME_COLORS.accentBg} ${THEME_COLORS.accentBgHover}`}
+        >
+          Добавить рекорд
+        </button>
+
+        <div className="mt-4">
+          <label
+            className={`block text-xs font-medium ${THEME_COLORS.labelText}`}
           >
-            <option value="">Выберите упражнение…</option>
-            {(exercises ?? []).map((e) => (
-              <option key={e.exerciseId} value={e.exerciseId}>
-                {e.title}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={!pmExerciseId}
-            onClick={() => setPmModalOpen(true)}
-            className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_COLORS.buttonPrimaryText} disabled:opacity-50 ${THEME_COLORS.accentBg} ${THEME_COLORS.accentBgHover}`}
-          >
-            Добавить рекорд
-          </button>
+            Упражнение в списке
+            <select
+              value={pmListFilterExerciseId}
+              onChange={(e) => setPmListFilterExerciseId(e.target.value)}
+              className={`mt-1 w-full max-w-md rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 text-sm ${THEME_COLORS.inputText}`}
+              aria-label="Фильтр списка рекордов по упражнению"
+            >
+              <option value="">Отображать все</option>
+              {(exercises ?? []).map((e) => (
+                <option key={e.exerciseId} value={String(e.exerciseId)}>
+                  {e.title}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -333,8 +350,8 @@ export default function StatisticsTab() {
       />
       <AddPersonalMaximumModal
         open={pmModalOpen}
-        exerciseId={pmExerciseId ? Number(pmExerciseId) : null}
-        exerciseTitle={selectedExerciseTitle}
+        exerciseId={null}
+        exerciseTitle="Упражнение"
         onClose={() => setPmModalOpen(false)}
         onSaved={() => {}}
       />

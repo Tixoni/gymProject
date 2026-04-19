@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../storage/db'
 import useBodyScrollLock from '../../hooks/useBodyScrollLock'
 import { STRENGTH_PROGRAM_PRESETS } from '../../trainingBuilder/strengthPresetPrograms'
 import { workoutService } from '../../storage/workoutService'
@@ -6,16 +8,30 @@ import { THEME_COLORS } from '../../theme'
 
 export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) {
   useBodyScrollLock(open)
+  const muscleGroups = useLiveQuery(() => db.muscleGroupsTable.toArray(), [])
+  const allExercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
   const [selectedId, setSelectedId] = useState(STRENGTH_PROGRAM_PRESETS[0]?.id ?? '')
+  const [muscleGroupId, setMuscleGroupId] = useState('')
+  const [exerciseId, setExerciseId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!open) return
-    setSelectedId(STRENGTH_PROGRAM_PRESETS[0]?.id ?? '')
+    const preset = STRENGTH_PROGRAM_PRESETS[0]
+    setSelectedId(preset?.id ?? '')
+    setMuscleGroupId(String(preset?.muscleGroupId ?? ''))
+    setExerciseId(String(preset?.exerciseId ?? ''))
     setSaving(false)
     setError('')
   }, [open])
+
+  useEffect(() => {
+    const preset = STRENGTH_PROGRAM_PRESETS.find((p) => p.id === selectedId)
+    if (!preset) return
+    setMuscleGroupId(String(preset.muscleGroupId))
+    setExerciseId(String(preset.exerciseId))
+  }, [selectedId])
 
   useEffect(() => {
     if (!open) return
@@ -31,9 +47,16 @@ export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) 
   const handleCreate = async () => {
     if (!selectedId) return
     setError('')
+    if (!Number(muscleGroupId) || !Number(exerciseId)) {
+      setError('Выберите мышечную группу и упражнение.')
+      return
+    }
     setSaving(true)
     try {
-      await workoutService.createPresetStrengthCycle(selectedId)
+      await workoutService.createPresetStrengthCycle(selectedId, {
+        muscleGroupId: Number(muscleGroupId),
+        exerciseId: Number(exerciseId),
+      })
       onCreated?.()
       onClose?.()
     } catch (e) {
@@ -79,7 +102,8 @@ export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) 
             Добавить цикл из шаблона
           </h2>
           <p className={`mt-1 text-xs lg:text-sm ${THEME_COLORS.dateTextSecondary}`}>
-            Выберите программу — цикл сохранится в базе и появится в списке «Циклы».
+            Цикл без календарных дат — только план подходов. Даты появятся у программы,
+            собранной через «Составить программу», или при ручном назначении в календаре.
           </p>
         </div>
 
@@ -127,6 +151,44 @@ export default function PresetTemplateCyclesModal({ open, onClose, onCreated }) 
               )
             })}
           </ul>
+
+          <label className={`mt-4 block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
+            Мышечная группа
+            <select
+              value={muscleGroupId}
+              onChange={(e) => {
+                setMuscleGroupId(e.target.value)
+                setExerciseId('')
+              }}
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText}`}
+            >
+              <option value="">Выберите…</option>
+              {(muscleGroups ?? []).map((g) => (
+                <option key={g.muscleGroupId} value={g.muscleGroupId}>
+                  {g.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={`mt-3 block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
+            Упражнение
+            <select
+              value={exerciseId}
+              onChange={(e) => setExerciseId(e.target.value)}
+              disabled={!muscleGroupId}
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText}`}
+            >
+              <option value="">{muscleGroupId ? 'Выберите…' : 'Сначала группа'}</option>
+              {(allExercises ?? [])
+                .filter((x) => x.muscleGroupId === Number(muscleGroupId))
+                .map((x) => (
+                  <option key={x.exerciseId} value={x.exerciseId}>
+                    {x.title}
+                  </option>
+                ))}
+            </select>
+          </label>
 
           <div className="mt-6 grid grid-cols-2 gap-3 lg:mt-8 lg:gap-4">
             <button

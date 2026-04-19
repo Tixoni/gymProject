@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import useBodyScrollLock from '../../hooks/useBodyScrollLock'
+import { db } from '../../storage/db'
 import { workoutService } from '../../storage/workoutService'
 import { THEME_COLORS } from '../../theme'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 export default function AddPersonalMaximumModal({
   open,
@@ -11,6 +13,10 @@ export default function AddPersonalMaximumModal({
   onSaved,
 }) {
   useBodyScrollLock(open)
+  const muscleGroups = useLiveQuery(() => db.muscleGroupsTable.toArray(), [])
+  const allExercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
+  const [muscleGroupId, setMuscleGroupId] = useState('')
+  const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
   const [comment, setComment] = useState('')
@@ -19,12 +25,20 @@ export default function AddPersonalMaximumModal({
 
   useEffect(() => {
     if (!open) return
+    const initialEx = exerciseId != null ? String(exerciseId) : ''
+    setSelectedExerciseId(initialEx)
+    if (initialEx) {
+      const ex = (allExercises ?? []).find((x) => x.exerciseId === Number(initialEx))
+      setMuscleGroupId(ex?.muscleGroupId != null ? String(ex.muscleGroupId) : '')
+    } else {
+      setMuscleGroupId('')
+    }
     setWeight('')
     setReps('')
     setComment('')
     setError('')
     setSaving(false)
-  }, [open, exerciseId])
+  }, [open, exerciseId, allExercises])
 
   useEffect(() => {
     if (!open) return
@@ -50,14 +64,15 @@ export default function AddPersonalMaximumModal({
       setError('Укажите целое число повторений не меньше 1.')
       return
     }
-    if (exerciseId == null) {
+    const selectedEx = Number(selectedExerciseId || exerciseId)
+    if (!selectedEx) {
       setError('Не выбрано упражнение.')
       return
     }
     setSaving(true)
     try {
       await workoutService.addPersonalMaximum(
-        exerciseId,
+        selectedEx,
         w,
         r,
         comment.trim(),
@@ -107,6 +122,44 @@ export default function AddPersonalMaximumModal({
               {error}
             </div>
           ) : null}
+
+          <label className={`block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
+            Мышечная группа
+            <select
+              value={muscleGroupId}
+              onChange={(e) => {
+                setMuscleGroupId(e.target.value)
+                setSelectedExerciseId('')
+              }}
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} outline-none focus:ring-2 focus:ring-orange-500/30 lg:py-3`}
+            >
+              <option value="">Выберите…</option>
+              {(muscleGroups ?? []).map((g) => (
+                <option key={g.muscleGroupId} value={g.muscleGroupId}>
+                  {g.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={`mt-3 block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
+            Упражнение
+            <select
+              value={selectedExerciseId}
+              onChange={(e) => setSelectedExerciseId(e.target.value)}
+              disabled={!muscleGroupId}
+              className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2.5 ${THEME_COLORS.inputText} outline-none focus:ring-2 focus:ring-orange-500/30 lg:py-3`}
+            >
+              <option value="">{muscleGroupId ? 'Выберите…' : 'Сначала группа'}</option>
+              {(allExercises ?? [])
+                .filter((x) => x.muscleGroupId === Number(muscleGroupId))
+                .map((x) => (
+                  <option key={x.exerciseId} value={x.exerciseId}>
+                    {x.title}
+                  </option>
+                ))}
+            </select>
+          </label>
 
           <label className={`block text-xs font-medium lg:text-sm ${THEME_COLORS.labelText}`}>
             Вес, кг

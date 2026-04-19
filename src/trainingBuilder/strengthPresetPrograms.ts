@@ -30,7 +30,7 @@ export const STRENGTH_PROGRAM_PRESETS: StrengthProgramPreset[] = [
     title: 'Базовый тренинг на силу — присед',
     description: 'Та же схема нагрузки для приседаний со штангой.',
     cycleTitle: 'Сила · присед',
-    exerciseId: 25,
+    exerciseId: 26,
     muscleGroupId: 7,
   },
   {
@@ -38,7 +38,7 @@ export const STRENGTH_PROGRAM_PRESETS: StrengthProgramPreset[] = [
     title: 'Базовый тренинг на силу — становая тяга',
     description: 'Та же схема нагрузки для становой тяги.',
     cycleTitle: 'Сила · становая',
-    exerciseId: 31,
+    exerciseId: 32,
     muscleGroupId: 8,
   },
 ]

@@ -18,12 +18,38 @@ import type { SetRow, Training } from './db'
 import { SCHEDULED_PROGRAM_CYCLE_KIND, db } from './db'
 
 const DEFAULT_SET_STATUS = 'not_completed'
+const DEFAULT_WEIGHT_HINT = 'Укажите вес снаряда'
 
 function isSetCompleted(status: string | undefined) {
   return Boolean(status && status !== DEFAULT_SET_STATUS)
 }
 
 export const workoutService = {
+  getWeightInputHintForExercise(
+    exercise:
+      | {
+          number_of_pieces_of_equipment?: number
+          initially_using_only_body_weight?: number
+        }
+      | undefined,
+  ) {
+    if (!exercise) return DEFAULT_WEIGHT_HINT
+    if (Number(exercise.initially_using_only_body_weight) === 1) {
+      return 'Укажите дополнительный вес снаряда или занимайтесь с собственным весом тела'
+    }
+    if (Number(exercise.number_of_pieces_of_equipment) === 2) {
+      return 'Укажите вес гантели'
+    }
+    return DEFAULT_WEIGHT_HINT
+  },
+
+  async getExerciseById(exerciseId: number) {
+    if (!Number.isFinite(Number(exerciseId)) || Number(exerciseId) <= 0) {
+      return null
+    }
+    return db.exercisesTable.get(Number(exerciseId))
+  },
+
   async refreshCycleStatusByTrainingId(trainingId: number) {
     const training = await db.trainingsTable.get(trainingId)
     const cycleId = training?.cycleId
@@ -132,6 +158,7 @@ export const workoutService = {
     const trainingId = tmpl.trainingId
     const exerciseId = tmpl.exerciseId
     const pmMax = await this.getLatestPmWeightForExercise(exerciseId)
+    if (!pmMax || pmMax <= 0) throw new Error('PM_REQUIRED')
 
     let plan: WorkoutTemplateSetEntry[] = []
     try {
@@ -427,6 +454,13 @@ export const workoutService = {
       throw new Error('PROGRAM_CYCLE')
     }
     const pmMax = await this.getLatestPmWeightForExercise(exerciseId)
+    if (!pmMax || pmMax <= 0) {
+      throw new Error('PM_REQUIRED')
+    }
+
+    const exerciseMeta = await db.exercisesTable.get(exerciseId)
+    const exerciseTitleStr =
+      exerciseMeta?.title?.trim() || `Упражнение #${exerciseId}`
 
     await db.transaction(
       'rw',
@@ -435,6 +469,7 @@ export const workoutService = {
         db.trainingsTable,
         db.setsTable,
         db.workoutTemplatesTable,
+        db.personalMaximumsTable,
       ],
       async () => {
         await db.trainingCyclesTable.update(cycleId, { muscleGroupId })
@@ -449,33 +484,47 @@ export const workoutService = {
             (a.trainingId ?? 0) - (b.trainingId ?? 0),
         )
 
-        for (const t of trainings) {
+        const trainingCount = trainings.length
+
+        for (let ti = 0; ti < trainings.length; ti++) {
+          const t = trainings[ti]
           const tid = t.trainingId
           if (tid == null) continue
 
-          const templates = await db.workoutTemplatesTable
+          const templateRows = await db.workoutTemplatesTable
             .where('trainingId')
             .equals(tid)
             .toArray()
-          if (templates.length !== 1) continue
+          if (!templateRows.length) continue
 
-          const tmpl = templates[0]
+          templateRows.sort(
+            (a, b) => (a.templateId ?? 0) - (b.templateId ?? 0),
+          )
+          const tmpl = templateRows[0]
           const templateId = tmpl.templateId
           if (templateId == null) continue
 
           let plan: WorkoutTemplateSetEntry[] = []
+          const oldPmMax = await this.getLatestPmWeightForExercise(
+            tmpl.exerciseId,
+          )
           try {
             const parsed = JSON.parse(tmpl.setsJson) as unknown
             if (Array.isArray(parsed)) {
               for (const row of parsed) {
                 const r = row as Record<string, unknown>
-                const wm =
-                  r.weightMode === 'percent' ? 'percent' : ('kg' as const)
+                let percentOfPm = Number(
+                  r.percentOfPm ?? r.displayPercentOfPm,
+                )
+                const weightKg = Number(r.weightKg ?? r.displayWeightKg) || 0
+                if ((!Number.isFinite(percentOfPm) || percentOfPm <= 0) && oldPmMax > 0) {
+                  percentOfPm = Math.round((weightKg / oldPmMax) * 10000) / 100
+                }
                 plan.push({
-                  weightMode: wm,
-                  weightKg: Number(r.weightKg ?? r.displayWeightKg) || 0,
-                  percentOfPm:
-                    Number(r.percentOfPm ?? r.displayPercentOfPm) || 0,
+                  // При смене упражнения веса всегда пересчитываются от процента ПМ.
+                  weightMode: 'percent',
+                  weightKg: 0,
+                  percentOfPm: Number.isFinite(percentOfPm) ? percentOfPm : 0,
                   reps: Math.max(1, Math.floor(Number(r.reps)) || 1),
                 })
               }
@@ -494,16 +543,21 @@ export const workoutService = {
 
           if (!plan.length && existingSets.length) {
             plan = existingSets.map((s) => ({
-              weightMode:
+              weightMode: 'percent' as const,
+              weightKg: 0,
+              percentOfPm:
                 (s.percentageOfPM ?? 0) > 0
-                  ? ('percent' as const)
-                  : ('kg' as const),
-              weightKg: s.weight,
-              percentOfPm: s.percentageOfPM,
+                  ? s.percentageOfPM
+                  : oldPmMax > 0
+                    ? Math.round((Number(s.weight) / oldPmMax) * 10000) / 100
+                    : 0,
               reps: s.reps,
             }))
           }
           if (!plan.length) continue
+          if (plan.some((x) => Number(x.percentOfPm) <= 0)) {
+            throw new Error('PERCENT_REQUIRED')
+          }
 
           for (const s of existingSets) {
             if (s.setId != null) await db.setsTable.delete(s.setId)
@@ -537,7 +591,13 @@ export const workoutService = {
             })
           }
 
+          const newTrainingTitle =
+            trainingCount > 1
+              ? `${exerciseTitleStr} — трен. ${ti + 1}`
+              : exerciseTitleStr
+
           await db.workoutTemplatesTable.update(templateId, {
+            title: newTrainingTitle,
             muscleGroupId,
             exerciseId,
             setsJson: JSON.stringify(enriched),
@@ -600,6 +660,58 @@ export const workoutService = {
       throw new Error('DATE_EXHAUSTED')
     }
 
+    await db.transaction('rw', [db.trainingsTable], async () => {
+      for (const t of trainings) {
+        const tid = t.trainingId
+        if (tid == null) continue
+        const slot = nextDate()
+        await db.trainingsTable.update(tid, {
+          plannedDate: slot.key,
+          dayOfTheWeek: slot.dow,
+        })
+      }
+    })
+  },
+
+  async rescheduleCycleTrainings(
+    cycleId: number,
+    weekdays: number[],
+    startDateKey: string,
+  ) {
+    const c = await db.trainingCyclesTable.get(cycleId)
+    if (!c) throw new Error('NOT_FOUND')
+    if (c.cycleKind === SCHEDULED_PROGRAM_CYCLE_KIND) {
+      throw new Error('PROGRAM_CYCLE')
+    }
+    const allowed = new Set(
+      (weekdays ?? []).filter(
+        (d) => Number.isInteger(d) && d >= 1 && d <= 7,
+      ),
+    )
+    if (!allowed.size) throw new Error('NO_WEEKDAYS')
+    const parsed = parseDateKeyLocal(startDateKey)
+    if (!parsed) throw new Error('BAD_START_DATE')
+    const trainings = await db.trainingsTable
+      .where('cycleId')
+      .equals(cycleId)
+      .toArray()
+    trainings.sort(
+      (a, b) =>
+        (a.dayOfTheWeek ?? 0) - (b.dayOfTheWeek ?? 0) ||
+        (a.trainingId ?? 0) - (b.trainingId ?? 0),
+    )
+    if (!trainings.length) return
+    const cur = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+    const nextDate = () => {
+      for (let i = 0; i < 800; i += 1) {
+        const js = cur.getDay()
+        const dow = js === 0 ? 7 : js
+        const key = getDateKey(cur)
+        cur.setDate(cur.getDate() + 1)
+        if (key && allowed.has(dow)) return { key, dow }
+      }
+      throw new Error('DATE_EXHAUSTED')
+    }
     await db.transaction('rw', [db.trainingsTable], async () => {
       for (const t of trainings) {
         const tid = t.trainingId
@@ -869,15 +981,24 @@ export const workoutService = {
    * Цикл «базовый тренинг на силу» (12 тренировок) из предустановки.
    * Нужен актуальный ПМ по выбранному упражнению.
    */
-  async createPresetStrengthCycle(presetId: string) {
+  async createPresetStrengthCycle(
+    presetId: string,
+    options?: {
+      muscleGroupId?: number
+      exerciseId?: number
+    },
+  ) {
     const preset = getStrengthPresetById(presetId)
     if (!preset) throw new Error('BAD_PRESET')
-    const pm = await this.getLatestPmWeightForExercise(preset.exerciseId)
+    const exerciseId = Number(options?.exerciseId) || preset.exerciseId
+    const muscleGroupId =
+      Number(options?.muscleGroupId) || preset.muscleGroupId
+    const pm = await this.getLatestPmWeightForExercise(exerciseId)
     if (!pm || pm <= 0) throw new Error('PM_REQUIRED')
     const workouts = buildStrengthTwelveWorkouts(
       pm,
-      preset.muscleGroupId,
-      preset.exerciseId,
+      muscleGroupId,
+      exerciseId,
     )
     return createCycleWithWorkouts({
       cycleTitle: preset.cycleTitle,

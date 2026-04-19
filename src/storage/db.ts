@@ -9,6 +9,7 @@ export const SCHEDULED_PROGRAM_CYCLE_KIND = 'scheduled_program'
 export interface MuscleGroup {
   muscleGroupId?: number
   title: string
+  percentage_of_fast_muscle_fibers?: number
 }
 
 export interface Exercise {
@@ -17,6 +18,8 @@ export interface Exercise {
   muscleGroupId: number
   /** Имя файла или подпуть внутри `src/assets/exercisesIcon` */
   imgTitle?: string
+  number_of_pieces_of_equipment?: number
+  initially_using_only_body_weight?: number
 }
 
 export interface PersonalMaximum {
@@ -108,8 +111,8 @@ class WorkoutAppDB extends Dexie {
     super('WorkoutAppDB')
 
     this.version(1).stores({
-      muscleGroupsTable: '++muscleGroupId, title',
-      exercisesTable: '++exerciseId, title, muscleGroupId',
+      muscleGroupsTable: '++muscleGroupId, title, percentage_of_fast_muscle_fibers',
+      exercisesTable: '++exerciseId, title, muscleGroupId, number_of_pieces_of_equipment, initially_using_only_body_weight',
       personalMaximumsTable: '++pmId, exerciseId, date, weight, reps, textComment',
       setsTable:
         '++setId, trainingId, exerciseId, setNumber, weight, percentageOfPM, reps, status',
@@ -148,7 +151,26 @@ class WorkoutAppDB extends Dexie {
 
     this.version(6).stores({
       trainingCyclesTable:
-        '++cycleId, muscleGroupId, status, cycleKind, cycleTitle',
+        '++cycleId, muscleGroupId, status, cycleKind, cycleTitle, programTitle',
+    })
+
+    this.version(7).stores({
+      muscleGroupsTable:
+        '++muscleGroupId, title, percentage_of_fast_muscle_fibers',
+      exercisesTable:
+        '++exerciseId, title, muscleGroupId, imgTitle, number_of_pieces_of_equipment, initially_using_only_body_weight',
+      personalMaximumsTable: '++pmId, exerciseId, date, weight, reps, textComment',
+      setsTable:
+        '++setId, trainingId, exerciseId, setNumber, weight, percentageOfPM, reps, status',
+      weekTable:
+        '++weekId, weekNumber, tonnage, IntensityInKG, IntensityInPercentage, totalReps',
+      trainingsTable:
+        '++trainingId, status, cycleId, plannedDate, weekId, dayOfTheWeek, tonnage, IntensityInKG, IntensityInPercentage, totalReps',
+      trainingCyclesTable:
+        '++cycleId, muscleGroupId, status, cycleKind, cycleTitle, programTitle',
+      bodyWeightProviderTable: 'date, weight',
+      workoutTemplatesTable:
+        '++templateId, title, muscleGroupId, exerciseId, createdAt, cycleId, trainingId',
     })
 
     this.on('ready', () => {
@@ -158,71 +180,72 @@ class WorkoutAppDB extends Dexie {
     this.on('populate', (transaction) => {
       return Promise.all([
         transaction.table('muscleGroupsTable').bulkAdd([
-        { muscleGroupId: 1, title: 'Грудные мышцы' },
-        { muscleGroupId: 2, title: 'Широчайшие мышцы спины' },
-        { muscleGroupId: 3, title: 'Трапециевидные мышцы' },
-        { muscleGroupId: 4, title: 'Дельтовидные мышцы' },
-        { muscleGroupId: 5, title: 'Бицепс' },
-        { muscleGroupId: 6, title: 'Трицепс' },
-        { muscleGroupId: 7, title: 'Квадрицепс' },
-        { muscleGroupId: 8, title: 'Бицепс бедра' },
-        { muscleGroupId: 9, title: 'Икроножные мышцы' },
-        { muscleGroupId: 10, title: 'Мышцы пресса' },
-        { muscleGroupId: 11, title: 'Предплечья' },
-      ]),
+          { muscleGroupId: 1, title: 'Грудные мышцы', percentage_of_fast_muscle_fibers: 0.5 },
+          { muscleGroupId: 2, title: 'Широчайшие мышцы спины' },
+          { muscleGroupId: 3, title: 'Трапециевидные мышцы' },
+          { muscleGroupId: 4, title: 'Дельтовидные мышцы' },
+          { muscleGroupId: 5, title: 'Бицепс' },
+          { muscleGroupId: 6, title: 'Трицепс' },
+          { muscleGroupId: 7, title: 'Квадрицепс' },
+          { muscleGroupId: 8, title: 'Бицепс бедра' },
+          { muscleGroupId: 9, title: 'Икроножные мышцы' },
+          { muscleGroupId: 10, title: 'Мышцы пресса' },
+          { muscleGroupId: 11, title: 'Предплечья' },
+        ]),
         transaction.table('exercisesTable').bulkAdd([
-          { exerciseId: 1, title: 'Жим штанги лежа', muscleGroupId: 1 },
-          { exerciseId: 2, title: 'Жим штанги в наклоне', muscleGroupId: 1 },
-          { exerciseId: 3, title: 'Жим гантелей', muscleGroupId: 1 },
-          { exerciseId: 4, title: 'Отжимания на брусьях', muscleGroupId: 1 },
-          { exerciseId: 5, title: 'Баттерфляй', muscleGroupId: 1 },
+          { exerciseId: 1, title: 'Жим штанги лежа', muscleGroupId: 1, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 2, title: 'Жим штанги в наклоне', muscleGroupId: 1, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 3, title: 'Жим гантелей', muscleGroupId: 1, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
+          { exerciseId: 4, title: 'Отжимания на брусьях', muscleGroupId: 1, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 5, title: 'Отжимания от пола', muscleGroupId: 1, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 6, title: 'Баттерфляй', muscleGroupId: 1, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 6, title: 'Тяга верхнего блока', muscleGroupId: 2 },
-          { exerciseId: 7, title: 'Горизонтальная тяга блока', muscleGroupId: 2 },
-          { exerciseId: 8, title: 'Подтягивания', muscleGroupId: 2 },
-          { exerciseId: 9, title: 'Тяга гантели одной рукой', muscleGroupId: 2 },
-          { exerciseId: 10, title: 'Тяга Ятса', muscleGroupId: 2 },
+          { exerciseId: 7, title: 'Тяга верхнего блока', muscleGroupId: 2, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 8, title: 'Горизонтальная тяга блока', muscleGroupId: 2, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 9, title: 'Подтягивания', muscleGroupId: 2, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 10, title: 'Тяга гантели одной рукой', muscleGroupId: 2, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 11, title: 'Тяга Ятса', muscleGroupId: 2, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 11, title: 'Шраги со штангой', muscleGroupId: 3 },
-          { exerciseId: 12, title: 'Шраги с гантелями', muscleGroupId: 3 },
+          { exerciseId: 12, title: 'Шраги со штангой', muscleGroupId: 3, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 13, title: 'Шраги с гантелями', muscleGroupId: 3, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 13, title: 'Жим штанги стоя', muscleGroupId: 4 },
-          { exerciseId: 14, title: 'Разведение гантелей в стороны', muscleGroupId: 4 },
-          { exerciseId: 15, title: 'Жим гантелей сидя', muscleGroupId: 4 },
-          { exerciseId: 16, title: 'Жим гири', muscleGroupId: 4 },
+          { exerciseId: 14, title: 'Жим штанги стоя', muscleGroupId: 4, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 15, title: 'Разведение гантелей в стороны', muscleGroupId: 4, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
+          { exerciseId: 16, title: 'Жим гантелей сидя', muscleGroupId: 4, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
+          { exerciseId: 17, title: 'Жим гири', muscleGroupId: 4, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 17, title: 'Подъем штанги на бицепс', muscleGroupId: 5 },
-          { exerciseId: 18, title: 'Подъем гантелей на бицепс', muscleGroupId: 5 },
-          { exerciseId: 19, title: 'Молотки с гантелями', muscleGroupId: 5 },
-          { exerciseId: 20, title: 'Подъем на бицепс прямым хватом', muscleGroupId: 5 },
+          { exerciseId: 18, title: 'Подъем штанги на бицепс', muscleGroupId: 5, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 19, title: 'Подъем гантелей на бицепс', muscleGroupId: 5, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
+          { exerciseId: 20, title: 'Молотки с гантелями', muscleGroupId: 5, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 0 },
+          { exerciseId: 21, title: 'Подъем на бицепс прямым хватом', muscleGroupId: 5, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 21, title: 'Французский жим', muscleGroupId: 6 },
-          { exerciseId: 22, title: 'Разгибание рук в кроссовере', muscleGroupId: 6 },
-          { exerciseId: 23, title: 'Жим лежа узким хватом', muscleGroupId: 6 },
-          { exerciseId: 24, title: 'Разгибание рук с гантелью за головой', muscleGroupId: 6 },
+          { exerciseId: 22, title: 'Французский жим', muscleGroupId: 6, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 23, title: 'Разгибание рук в кроссовере', muscleGroupId: 6, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 24, title: 'Жим лежа узким хватом', muscleGroupId: 6, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 25, title: 'Разгибание рук с гантелью за головой', muscleGroupId: 6, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 25, title: 'Приседания со штангой', muscleGroupId: 7 },
-          { exerciseId: 26, title: 'Жим ногами', muscleGroupId: 7 },
-          { exerciseId: 27, title: 'Выпады с гантелями', muscleGroupId: 7 },
-          { exerciseId: 28, title: 'Разгибание ног в тренажере', muscleGroupId: 7 },
+          { exerciseId: 26, title: 'Приседания со штангой', muscleGroupId: 7, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 1 },
+          { exerciseId: 27, title: 'Жим ногами', muscleGroupId: 7, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 28, title: 'Выпады с гантелями', muscleGroupId: 7, number_of_pieces_of_equipment: 2, initially_using_only_body_weight: 1 },
+          { exerciseId: 29, title: 'Разгибание ног в тренажере', muscleGroupId: 7, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 29, title: 'Сгибание ног в тренажере', muscleGroupId: 8 },
-          { exerciseId: 30, title: 'Румынская тяга', muscleGroupId: 8 },
-          { exerciseId: 31, title: 'Мертвая тяга', muscleGroupId: 8 },
+          { exerciseId: 30, title: 'Сгибание ног в тренажере', muscleGroupId: 8, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 31, title: 'Румынская тяга', muscleGroupId: 8, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 1 },
+          { exerciseId: 32, title: 'Мертвая тяга', muscleGroupId: 8, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 1 },
         
-          { exerciseId: 32, title: 'Подъем на носки стоя', muscleGroupId: 9 },
-          { exerciseId: 33, title: 'Подъем на носки сидя', muscleGroupId: 9 },
-          { exerciseId: 34, title: 'Подъем на носки в тренажере', muscleGroupId: 9 },
+          { exerciseId: 33, title: 'Подъем на носки стоя', muscleGroupId: 9, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 1 },
+          { exerciseId: 34, title: 'Подъем на носки сидя', muscleGroupId: 9, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 1 },
+          { exerciseId: 35, title: 'Подъем на носки в тренажере', muscleGroupId: 9, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
         
-          { exerciseId: 35, title: 'Скручивания', muscleGroupId: 10 },
-          { exerciseId: 36, title: 'Подъем ног в висе', muscleGroupId: 10 },
-          { exerciseId: 37, title: 'Планка', muscleGroupId: 10 },
-          { exerciseId: 38, title: 'Хвост дракона', muscleGroupId: 10 },
+          { exerciseId: 36, title: 'Скручивания', muscleGroupId: 10, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 37, title: 'Подъем ног в висе', muscleGroupId: 10, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 38, title: 'Планка', muscleGroupId: 10, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
+          { exerciseId: 39, title: 'Хвост дракона', muscleGroupId: 10, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
         
-          { exerciseId: 39, title: 'Подъём на луч штанги', muscleGroupId: 11 },
-          { exerciseId: 40, title: 'Подъём на луч одной рукой', muscleGroupId: 11 },
-          { exerciseId: 41, title: 'Кистевой эспандер', muscleGroupId: 11 },
-          { exerciseId: 42, title: 'Вис на турнике с fatgrips', muscleGroupId: 11 },
+          { exerciseId: 40, title: 'Подъём на луч штанги', muscleGroupId: 11, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 41, title: 'Подъём на луч одной рукой', muscleGroupId: 11, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 42, title: 'Кистевой эспандер', muscleGroupId: 11, number_of_pieces_of_equipment: 1, initially_using_only_body_weight: 0 },
+          { exerciseId: 43, title: 'Вис на турнике с fatgrips', muscleGroupId: 11, number_of_pieces_of_equipment: 0, initially_using_only_body_weight: 1 },
         ]),
       ])
       /* Демо-цикл не в populate: таблица шаблонов подключается в v3+, в транзакции
@@ -292,7 +315,7 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   for (const _ of plan1) {
     await tx.table('setsTable').add({
       trainingId: tr1,
-      exerciseId: 15,
+      exerciseId: 18,
       setNumber: sn++,
       weight: 12.5,
       reps: 10,
@@ -304,7 +327,7 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   for (const _ of plan2) {
     await tx.table('setsTable').add({
       trainingId: tr2,
-      exerciseId: 15,
+      exerciseId: 18,
       setNumber: sn++,
       weight: 14,
       reps: 8,
@@ -315,7 +338,7 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   await tx.table('workoutTemplatesTable').add({
     title: `${DEMO_CYCLE_TITLE_PREFIX} Подъём штанги на бицепс`,
     muscleGroupId: 5,
-    exerciseId: 15,
+    exerciseId: 18,
     setsJson: JSON.stringify(plan1),
     createdAt: new Date().toISOString(),
     cycleId,
@@ -324,7 +347,7 @@ async function addDemoCycleInTransaction(tx: Transaction) {
   await tx.table('workoutTemplatesTable').add({
     title: `${DEMO_CYCLE_TITLE_PREFIX} Трен. 2 — тяжелее`,
     muscleGroupId: 5,
-    exerciseId: 15,
+    exerciseId: 18,
     setsJson: JSON.stringify(plan2),
     createdAt: new Date().toISOString(),
     cycleId,

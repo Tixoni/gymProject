@@ -157,6 +157,10 @@ export default function EditCycleModal({
     } catch (err) {
       if (err?.message === 'PROGRAM_CYCLE') {
         setError('Для составной программы используйте правку отдельных блоков.')
+      } else if (err?.message === 'PM_REQUIRED') {
+        setError('для выбраного упражнения нет PM')
+      } else if (err?.message === 'PERCENT_REQUIRED') {
+        setError('Невозможно пересчитать веса: у части подходов не задан процент от ПМ.')
       } else if (err?.message === 'EMPTY_TITLE') {
         setError('Укажите название.')
       } else {
