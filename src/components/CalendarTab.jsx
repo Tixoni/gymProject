@@ -7,6 +7,11 @@ import {
   getDateKey,
   parseDateKeyLocal,
 } from '../utils/dateKeys'
+import {
+  getOverdueHandlingMode,
+  OVERDUE_MODE_AUTO,
+  OVERDUE_MODE_MANUAL,
+} from '../utils/appSettings'
 import CalendarDay from './CalendarDay'
 import TrainingTemplate from './TrainingTemplate'
 
@@ -17,6 +22,10 @@ export default function CalendarTab() {
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey)
   const [calendarView, setCalendarView] = useState('month')
   const [calendarSlideDir, setCalendarSlideDir] = useState(0)
+  const [manualShiftBusy, setManualShiftBusy] = useState(false)
+  const [shiftModalOpen, setShiftModalOpen] = useState(false)
+  const [manualShiftMode, setManualShiftMode] = useState('nearest')
+  const [manualTargetDateKey, setManualTargetDateKey] = useState(todayKey)
 
   const exercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
   const exercisesById = useMemo(() => {
@@ -33,6 +42,10 @@ export default function CalendarTab() {
     () => workoutService.listDateKeysWithPlannedTrainings(),
     [],
   )
+  const calendarStatuses = useLiveQuery(
+    () => workoutService.getCalendarDayStatusByDateKey(),
+    [],
+  )
   const trainingKeySet = useMemo(
     () => new Set(trainingDateKeys ?? []),
     [trainingDateKeys],
@@ -45,6 +58,18 @@ export default function CalendarTab() {
         : Promise.resolve([]),
     [selectedDateKey],
   )
+  const selectedDateStatus = (calendarStatuses ?? {})[selectedDateKey]
+  const selectedMissedTrainings = useMemo(() => {
+    const list = dayTrainings ?? []
+    return list
+      .filter(({ training, sets }) => {
+        const completed =
+          sets.length > 0 &&
+          sets.every((s) => s?.status && s.status !== DEFAULT_SET_STATUS)
+        return !completed && training?.trainingId != null
+      })
+      .map(({ training }) => training.trainingId)
+  }, [dayTrainings])
 
   const selectedDate = parseDateKeyLocal(selectedDateKey) || new Date()
   const year = selectedDate.getFullYear()
@@ -138,6 +163,44 @@ export default function CalendarTab() {
     if (todayKey && !selectedDateKey) setSelectedDateKey(todayKey)
   }, [todayKey, selectedDateKey])
 
+  useEffect(() => {
+    const mode = getOverdueHandlingMode()
+    if (mode !== OVERDUE_MODE_AUTO) return
+    void workoutService.shiftMissedTrainingsAutoCascade()
+  }, [])
+
+  const handleManualShift = useCallback(async () => {
+    setManualShiftMode('nearest')
+    setManualTargetDateKey(todayKey)
+    setShiftModalOpen(true)
+  }, [todayKey])
+
+  const handleConfirmManualShift = useCallback(async () => {
+    if (!selectedMissedTrainings.length) {
+      setShiftModalOpen(false)
+      return
+    }
+    setManualShiftBusy(true)
+    try {
+      for (const tid of selectedMissedTrainings) {
+        if (manualShiftMode === 'exact') {
+          await workoutService.shiftTrainingWithCascade(
+            tid,
+            manualTargetDateKey,
+            'exact',
+          )
+        } else {
+          await workoutService.shiftTrainingWithCascade(tid, todayKey, 'nearest')
+        }
+      }
+      setShiftModalOpen(false)
+    } catch (e) {
+      window.alert(e?.message === 'BAD_INPUT' ? 'Укажите корректную дату переноса.' : 'Не удалось перенести тренировку.')
+    } finally {
+      setManualShiftBusy(false)
+    }
+  }, [manualShiftMode, manualTargetDateKey, selectedMissedTrainings, todayKey])
+
   return (
     <div className={`min-h-0 ${THEME_COLORS.contentText}`}>
       <div className="sticky top-0 z-[5] -mx-4 border-b border-zinc-800/80 bg-zinc-950/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
@@ -196,6 +259,7 @@ export default function CalendarTab() {
                       isSelected={key === selectedDateKey}
                       isOtherMonth={cell.isOtherMonth}
                       hasPending={hasTrainingForDay(key)}
+                      status={(calendarStatuses ?? {})[key]}
                       onSelect={(d) => {
                         const k = getDateKey(d)
                         if (k) setSelectedDateKey(k)
@@ -222,6 +286,7 @@ export default function CalendarTab() {
                       isSelected={key === selectedDateKey}
                       isOtherMonth={cell.isOtherMonth}
                       hasPending={hasTrainingForDay(key)}
+                      status={(calendarStatuses ?? {})[key]}
                       onSelect={(d) => {
                         // В режиме "Неделя" не перелистываем месяц кликом по крайним дням.
                         if (cell.isOtherMonth) return
@@ -290,6 +355,17 @@ export default function CalendarTab() {
         </div>
 
         <section>
+          {getOverdueHandlingMode() === OVERDUE_MODE_MANUAL &&
+          selectedDateStatus === 'missed' ? (
+            <button
+              type="button"
+              disabled={manualShiftBusy}
+              onClick={() => void handleManualShift()}
+              className="mb-3 w-full rounded-2xl border border-red-700 bg-red-600 px-4 py-3 text-base font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {manualShiftBusy ? 'Перенос…' : 'Перенести тренировку'}
+            </button>
+          ) : null}
           <h3 className={`mb-3 text-base font-semibold ${THEME_COLORS.heading}`}>
             Тренировки на выбранный день
           </h3>
@@ -336,6 +412,68 @@ export default function CalendarTab() {
           )}
         </section>
       </div>
+
+      {shiftModalOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70"
+            aria-label="Закрыть"
+            onClick={() => setShiftModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-950 p-4">
+            <h4 className="text-base font-semibold text-zinc-100">Перенос тренировки</h4>
+            <p className="mt-1 text-sm text-zinc-400">
+              Выберите способ переноса пропущенной тренировки.
+            </p>
+            <div className="mt-3 space-y-2">
+              <label className="flex items-center gap-2 text-sm text-zinc-200">
+                <input
+                  type="radio"
+                  name="manualShiftMode"
+                  checked={manualShiftMode === 'exact'}
+                  onChange={() => setManualShiftMode('exact')}
+                />
+                На конкретную дату
+              </label>
+              {manualShiftMode === 'exact' ? (
+                <input
+                  type="date"
+                  value={manualTargetDateKey}
+                  onChange={(e) => setManualTargetDateKey(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100"
+                />
+              ) : null}
+              <label className="flex items-center gap-2 text-sm text-zinc-200">
+                <input
+                  type="radio"
+                  name="manualShiftMode"
+                  checked={manualShiftMode === 'nearest'}
+                  onChange={() => setManualShiftMode('nearest')}
+                />
+                На ближайшую подходящую дату по программе
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShiftModalOpen(false)}
+                className="flex-1 rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-200"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                disabled={manualShiftBusy}
+                onClick={() => void handleConfirmManualShift()}
+                className="flex-1 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {manualShiftBusy ? 'Перенос…' : 'Перенести'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -1,6 +1,14 @@
 import { THEME_COLORS } from '../theme'
 
-function CalendarDay({ date, isToday, isSelected, isOtherMonth, hasPending, onSelect }) {
+function CalendarDay({
+  date,
+  isToday,
+  isSelected,
+  isOtherMonth,
+  hasPending,
+  status,
+  onSelect,
+}) {
   if (!date) {
     return <div className="h-12" />;
   }
@@ -29,7 +37,15 @@ function CalendarDay({ date, isToday, isSelected, isOtherMonth, hasPending, onSe
         {dayNumber}
       </div>
       {hasPending && (
-        <div className={`h-1.5 w-1.5 rounded-full ${THEME_COLORS.calendarPendingDot}`} />
+        <div
+          className={`h-1.5 w-1.5 rounded-full ${
+            status === 'completed'
+              ? 'bg-emerald-500'
+              : status === 'missed'
+                ? 'bg-red-500'
+                : THEME_COLORS.calendarPendingDot
+          }`}
+        />
       )}
     </button>
   );

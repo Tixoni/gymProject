@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
 import { THEME_COLORS } from '../theme'
+import {
+  getOverdueHandlingMode,
+  OVERDUE_MODE_AUTO,
+  OVERDUE_MODE_MANUAL,
+  setOverdueHandlingMode,
+  UI_THEME_STORAGE_KEY,
+} from '../utils/appSettings'
 
 const DEFAULT_THEME = {
   '--app-bg': '#09090b',
@@ -22,11 +29,9 @@ const DEFAULT_THEME = {
   '--icon-inactive': '#a1a1aa',
 }
 
-const STORAGE_KEY = 'ui-theme-overrides-v1'
-
 export function readThemeOverrides() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(UI_THEME_STORAGE_KEY)
     if (!raw) return {}
     const parsed = JSON.parse(raw)
     return parsed && typeof parsed === 'object' ? parsed : {}
@@ -41,6 +46,7 @@ export function getResolvedThemeVars() {
 
 export default function SettingsTab() {
   const [form, setForm] = useState(getResolvedThemeVars())
+  const [overdueMode, setOverdueMode] = useState(getOverdueHandlingMode())
 
   useEffect(() => {
     setForm(getResolvedThemeVars())
@@ -55,12 +61,14 @@ export default function SettingsTab() {
     for (const [k, v] of Object.entries(form)) {
       if (v && v !== DEFAULT_THEME[k]) payload[k] = v
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    localStorage.setItem(UI_THEME_STORAGE_KEY, JSON.stringify(payload))
+    setOverdueHandlingMode(overdueMode)
     window.location.reload()
   }
 
   const reset = () => {
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(UI_THEME_STORAGE_KEY)
+    setOverdueHandlingMode(OVERDUE_MODE_AUTO)
     window.location.reload()
   }
 
@@ -107,6 +115,39 @@ export default function SettingsTab() {
           >
             Сбросить
           </button>
+        </div>
+      </section>
+
+      <section className={`rounded-2xl border ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionBackground} p-4`}>
+        <h2 className={`text-base font-semibold lg:text-lg ${THEME_COLORS.heading}`}>
+          Просроченные тренировки
+        </h2>
+        <p className={`mt-1 text-sm ${THEME_COLORS.contentMuted}`}>
+          Выберите, как обрабатывать пропущенные дни в календаре.
+        </p>
+        <div className="mt-4 grid gap-2">
+          <label className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground}`}>
+            <input
+              type="radio"
+              name="overdueMode"
+              checked={overdueMode === OVERDUE_MODE_AUTO}
+              onChange={() => setOverdueMode(OVERDUE_MODE_AUTO)}
+            />
+            <span className={`text-sm ${THEME_COLORS.contentText}`}>
+              Автоматический перенос
+            </span>
+          </label>
+          <label className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 ${THEME_COLORS.chromeBorder} ${THEME_COLORS.sectionItemBackground}`}>
+            <input
+              type="radio"
+              name="overdueMode"
+              checked={overdueMode === OVERDUE_MODE_MANUAL}
+              onChange={() => setOverdueMode(OVERDUE_MODE_MANUAL)}
+            />
+            <span className={`text-sm ${THEME_COLORS.contentText}`}>
+              Ручной перенос (кнопка в календаре)
+            </span>
+          </label>
         </div>
       </section>
     </div>

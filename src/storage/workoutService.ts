@@ -24,6 +24,34 @@ function isSetCompleted(status: string | undefined) {
   return Boolean(status && status !== DEFAULT_SET_STATUS)
 }
 
+function addDaysToDateKey(dateKey: string, days: number) {
+  const parsed = parseDateKeyLocal(dateKey)
+  if (!parsed) return ''
+  const d = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+  d.setDate(d.getDate() + days)
+  return getDateKey(d) ?? ''
+}
+
+function toDow(dateKey: string) {
+  const d = parseDateKeyLocal(dateKey)
+  if (!d) return undefined
+  const js = d.getDay()
+  return js === 0 ? 7 : js
+}
+
+function nextAllowedDateKey(startDateKey: string, allowedWeekdays: Set<number>) {
+  const parsed = parseDateKeyLocal(startDateKey)
+  if (!parsed) return ''
+  const cur = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+  for (let i = 0; i < 1200; i += 1) {
+    const key = getDateKey(cur)
+    const dow = key ? toDow(key) : undefined
+    if (key && dow != null && allowedWeekdays.has(dow)) return key
+    cur.setDate(cur.getDate() + 1)
+  }
+  return ''
+}
+
 export const workoutService = {
   getWeightInputHintForExercise(
     exercise:
@@ -621,7 +649,11 @@ export const workoutService = {
   },
 
   /** Перераспределить тренировки программы по выбранным дням недели. */
-  async rescheduleProgramTrainings(cycleId: number, weekdays: number[]) {
+  async rescheduleProgramTrainings(
+    cycleId: number,
+    weekdays: number[],
+    startDateKey?: string,
+  ) {
     const c = await db.trainingCyclesTable.get(cycleId)
     if (!c) throw new Error('NOT_FOUND')
     if (c.cycleKind !== SCHEDULED_PROGRAM_CYCLE_KIND) {
@@ -642,8 +674,11 @@ export const workoutService = {
     if (!trainings.length) return
 
     const firstDate =
-      trainings.find((t) => isValidCalendarDateKey(t.plannedDate))?.plannedDate ??
-      getDateKey(new Date()) ??
+      (startDateKey && isValidCalendarDateKey(startDateKey)
+        ? startDateKey
+        : '') ||
+      trainings.find((t) => isValidCalendarDateKey(t.plannedDate))?.plannedDate ||
+      getDateKey(new Date()) ||
       ''
     const parsed = parseDateKeyLocal(firstDate)
     if (!parsed) throw new Error('BAD_START_DATE')
@@ -796,6 +831,170 @@ export const workoutService = {
         return { training: t, sets }
       }),
     )
+  },
+
+  async getCalendarDayStatusByDateKey() {
+    const trainings = await db.trainingsTable
+      .filter((t) => isValidCalendarDateKey(t.plannedDate) && t.trainingId != null)
+      .toArray()
+    const ids = trainings
+      .map((t) => t.trainingId)
+      .filter((id): id is number => id != null)
+    const setsByTrainingId = new Map<number, SetRow[]>()
+    for (const tid of ids) {
+      const sets = await db.setsTable.where('trainingId').equals(tid).toArray()
+      setsByTrainingId.set(tid, sets)
+    }
+    const todayKey = getDateKey(new Date()) ?? ''
+    const map: Record<string, 'planned' | 'completed' | 'missed'> = {}
+    for (const t of trainings) {
+      const key = t.plannedDate as string
+      const tid = t.trainingId as number
+      const sets = setsByTrainingId.get(tid) ?? []
+      const completed = sets.length > 0 && sets.every((s) => isSetCompleted(s.status))
+      const missed = !completed && key < todayKey
+      const prev = map[key]
+      if (missed) {
+        map[key] = 'missed'
+      } else if (completed) {
+        if (prev !== 'missed') map[key] = 'completed'
+      } else if (!prev) {
+        map[key] = 'planned'
+      }
+    }
+    return map
+  },
+
+  async shiftTrainingWithCascade(
+    trainingId: number,
+    preferredDateKey: string,
+    mode: 'exact' | 'nearest',
+  ) {
+    const selected = await db.trainingsTable.get(trainingId)
+    if (!selected?.cycleId || !isValidCalendarDateKey(preferredDateKey)) {
+      throw new Error('BAD_INPUT')
+    }
+    const cycleId = selected.cycleId
+    const trainings = await db.trainingsTable
+      .where('cycleId')
+      .equals(cycleId)
+      .filter((t) => t.trainingId != null && isValidCalendarDateKey(t.plannedDate))
+      .toArray()
+    trainings.sort((a, b) =>
+      String(a.plannedDate).localeCompare(String(b.plannedDate)) ||
+      (a.trainingId ?? 0) - (b.trainingId ?? 0),
+    )
+    const allowed = new Set(
+      trainings
+        .map((t) => Number(t.dayOfTheWeek))
+        .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7),
+    )
+    if (!allowed.size) throw new Error('NO_WEEKDAYS')
+
+    const targetBase =
+      mode === 'exact'
+        ? preferredDateKey
+        : nextAllowedDateKey(preferredDateKey, allowed)
+    if (!targetBase) throw new Error('BAD_DATE')
+    const normalizedTarget =
+      mode === 'exact' ? targetBase : nextAllowedDateKey(targetBase, allowed)
+    if (!normalizedTarget) throw new Error('BAD_DATE')
+
+    const selectedDate = selected.plannedDate as string
+    const selectedIdx = trainings.findIndex((t) => t.trainingId === trainingId)
+    if (selectedIdx < 0) throw new Error('NOT_FOUND')
+    const selectedRow = trainings[selectedIdx]
+    const others = trainings.filter((t) => t.trainingId !== trainingId)
+
+    const pivot = normalizedTarget < selectedDate ? normalizedTarget : selectedDate
+    const before = others.filter((t) => String(t.plannedDate) < pivot)
+    const cascadePool = [
+      selectedRow,
+      ...others.filter((t) => String(t.plannedDate) >= pivot),
+    ].sort((a, b) =>
+      String(a.plannedDate).localeCompare(String(b.plannedDate)) ||
+      (a.trainingId ?? 0) - (b.trainingId ?? 0),
+    )
+    const selectedPos = cascadePool.findIndex((t) => t.trainingId === trainingId)
+    if (selectedPos > 0) {
+      cascadePool.splice(selectedPos, 1)
+      cascadePool.unshift(selectedRow)
+    }
+
+    const occupiedBefore = new Set(before.map((t) => String(t.plannedDate)))
+    const updates: Array<{ tid: number; key: string }> = []
+    let cursor = normalizedTarget
+    for (const row of cascadePool) {
+      const tid = row.trainingId
+      if (tid == null) continue
+      let key = cursor
+      while (occupiedBefore.has(key)) {
+        key = addDaysToDateKey(key, 1)
+        if (!key) throw new Error('DATE_EXHAUSTED')
+      }
+      if (mode === 'nearest' && !allowed.has(toDow(key) ?? 0)) {
+        key = nextAllowedDateKey(key, allowed)
+      }
+      if (!key) throw new Error('DATE_EXHAUSTED')
+      updates.push({ tid, key })
+      occupiedBefore.add(key)
+      const next = addDaysToDateKey(key, 1)
+      cursor = nextAllowedDateKey(next || key, allowed)
+      if (!cursor) throw new Error('DATE_EXHAUSTED')
+    }
+
+    await db.transaction('rw', [db.trainingsTable], async () => {
+      for (const u of updates) {
+        await db.trainingsTable.update(u.tid, {
+          plannedDate: u.key,
+          dayOfTheWeek: toDow(u.key),
+        })
+      }
+    })
+  },
+
+  async shiftMissedTrainingsAutoCascade() {
+    const todayKey = getDateKey(new Date()) ?? ''
+    if (!todayKey) return 0
+    const trainings = await db.trainingsTable
+      .filter(
+        (t) =>
+          t.trainingId != null &&
+          t.cycleId != null &&
+          isValidCalendarDateKey(t.plannedDate) &&
+          (t.plannedDate as string) < todayKey,
+      )
+      .toArray()
+    trainings.sort((a, b) =>
+      String(a.plannedDate).localeCompare(String(b.plannedDate)) ||
+      (a.trainingId ?? 0) - (b.trainingId ?? 0),
+    )
+    let moved = 0
+    for (const t of trainings) {
+      const tid = t.trainingId as number
+      const sets = await db.setsTable.where('trainingId').equals(tid).toArray()
+      const completed = sets.length > 0 && sets.every((s) => isSetCompleted(s.status))
+      if (completed) continue
+      await this.shiftTrainingWithCascade(tid, todayKey, 'nearest')
+      moved += 1
+    }
+    return moved
+  },
+
+  async getCycleScheduleBounds(cycleId: number) {
+    const trainings = await db.trainingsTable
+      .where('cycleId')
+      .equals(cycleId)
+      .filter((t) => isValidCalendarDateKey(t.plannedDate))
+      .toArray()
+    if (!trainings.length) return { startDateKey: '', endDateKey: '' }
+    trainings.sort((a, b) =>
+      String(a.plannedDate).localeCompare(String(b.plannedDate)),
+    )
+    return {
+      startDateKey: trainings[0].plannedDate ?? '',
+      endDateKey: trainings[trainings.length - 1].plannedDate ?? '',
+    }
   },
 
   /**

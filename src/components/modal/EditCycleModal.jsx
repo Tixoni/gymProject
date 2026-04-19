@@ -34,6 +34,8 @@ export default function EditCycleModal({
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [busyAction, setBusyAction] = useState('')
+  const [programStartDate, setProgramStartDate] = useState('')
+  const [programEndDate, setProgramEndDate] = useState('')
 
   const muscleGroups = useLiveQuery(() => db.muscleGroupsTable.toArray(), [])
   const allExercises = useLiveQuery(() => db.exercisesTable.toArray(), [])
@@ -93,6 +95,14 @@ export default function EditCycleModal({
           .map((t) => Number(t.dayOfTheWeek))
           .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7)
         setWeekdays(new Set(dows))
+        if (c?.cycleKind === SCHEDULED_PROGRAM_CYCLE_KIND && c?.cycleId != null) {
+          const bounds = await workoutService.getCycleScheduleBounds(c.cycleId)
+          setProgramStartDate(bounds.startDateKey)
+          setProgramEndDate(bounds.endDateKey)
+        } else {
+          setProgramStartDate('')
+          setProgramEndDate('')
+        }
         await refreshCycleTrainings()
       } catch (e) {
         if (!cancelled) setError('Не удалось загрузить цикл.')
@@ -141,7 +151,19 @@ export default function EditCycleModal({
           setSubmitting(false)
           return
         }
-        await workoutService.rescheduleProgramTrainings(cycleId, dows)
+        if (!programStartDate) {
+          setError('Укажите дату начала программы.')
+          setSubmitting(false)
+          return
+        }
+        await workoutService.rescheduleProgramTrainings(
+          cycleId,
+          dows,
+          programStartDate,
+        )
+        const bounds = await workoutService.getCycleScheduleBounds(cycleId)
+        setProgramStartDate(bounds.startDateKey)
+        setProgramEndDate(bounds.endDateKey)
       } else {
         const mg = Number(muscleGroupId)
         const ex = Number(exerciseId)
@@ -360,6 +382,26 @@ export default function EditCycleModal({
                     {label}
                   </label>
                 ))}
+              </div>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <label className={`block text-xs font-medium ${THEME_COLORS.labelText}`}>
+                  Дата начала
+                  <input
+                    type="date"
+                    value={programStartDate}
+                    onChange={(e) => setProgramStartDate(e.target.value)}
+                    className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2 ${THEME_COLORS.inputText}`}
+                  />
+                </label>
+                <label className={`block text-xs font-medium ${THEME_COLORS.labelText}`}>
+                  Дата окончания
+                  <input
+                    type="date"
+                    value={programEndDate}
+                    readOnly
+                    className={`mt-1 w-full rounded-xl border ${THEME_COLORS.inputBorder} ${THEME_COLORS.inputBg} px-3 py-2 ${THEME_COLORS.inputText} opacity-80`}
+                  />
+                </label>
               </div>
             </div>
           )}
